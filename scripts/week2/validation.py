@@ -1,6 +1,4 @@
 import pandas as pd
-import matplotlib.pyplot as plt
-from scipy.stats import iqr
 from statsmodels.stats.descriptivestats import Description
 import os
 
