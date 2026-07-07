@@ -3,9 +3,9 @@ from statsmodels.stats.descriptivestats import Description
 from pathlib import Path
 import os
 
-RAW_DIR = Path("../../data/raw/")
-PROCESSED_DIR = Path("../../data/processed/")
-FILTERED_DIR = Path("../../data/filtered/")
+RAW_DIR = Path("data/raw/")
+PROCESSED_DIR = Path("data/processed/")
+FILTERED_DIR = Path("data/filtered/")
 
 def process_data():
     """

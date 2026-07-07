@@ -2,8 +2,8 @@ import os
 import pandas as pd
 
 
-RAW_DIR = "../../data/raw/"
-PROCESSED_DIR = "../../data/processed/"
+RAW_DIR = "data/raw/"
+PROCESSED_DIR = "data/processed/"
 
 START_YEAR = 2024
 CURR_YEAR = 2026

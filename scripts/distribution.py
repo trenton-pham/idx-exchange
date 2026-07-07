@@ -54,7 +54,7 @@ def box(series, column):
     plt.savefig(f"visuals/{column.lower()}_box.pdf", format="pdf")
 
 def main():
-    PROCESSED_DIR = "../../data/processed/"
+    PROCESSED_DIR = "data/processed/"
 
     # listing_data = pd.read_csv(PROCESSED_DIR + "CRMLSListing_202401_202605.csv", low_memory=False)
     sold_data = pd.read_csv(PROCESSED_DIR + "CRMLSSold_202401_202605.csv", low_memory=False)
