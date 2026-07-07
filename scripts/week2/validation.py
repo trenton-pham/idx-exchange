@@ -1,9 +1,11 @@
 import pandas as pd
 from statsmodels.stats.descriptivestats import Description
+from pathlib import Path
 import os
 
-RAW_DIR = "../../data/raw/"
-PROCESSED_DIR = "../../data/processed/"
+RAW_DIR = Path("../../data/raw/")
+PROCESSED_DIR = Path("../../data/processed/")
+FILTERED_DIR = Path("../../data/filtered/")
 
 def process_data():
     """
@@ -58,8 +60,8 @@ def process_data():
     listing_comb = pd.concat(listing, ignore_index=True)
     sold_comb = pd.concat(sold, ignore_index=True)
 
-    listing_comb.to_csv(os.path.join(PROCESSED_DIR, "CRMLSListing_202401_202605_all.csv"), index=False)
-    sold_comb.to_csv(os.path.join(PROCESSED_DIR, "CRMLSSold_202401_202605_all.csv"), index=False)
+    listing_comb.to_csv(os.path.join(PROCESSED_DIR, Path("CRMLSListing_202401_202605.csv")), index=False)
+    sold_comb.to_csv(os.path.join(PROCESSED_DIR, Path("CRMLSSold_202401_202605.csv")), index=False)
 
 def unique_property_types(data):
     return data["PropertyType"].unique()
@@ -71,6 +73,12 @@ def missing_value_analysis(data):
     missing_df["missing_pct"] = (missing_df["missing_count"] / data.shape[0]) * 100
     return missing_df
 
+def filter_missing_columns(data, threshold=50):
+    missing_df = missing_value_analysis(data)
+    columns_to_drop = missing_df[missing_df["missing_pct"] > threshold].index.tolist()
+    filtered_data = data.drop(columns=columns_to_drop)
+    return filtered_data, columns_to_drop
+
 def distribution_summary(data):
     columns = ["ClosePrice", "LivingArea", "DaysOnMarket"]
     for column in columns:
@@ -81,10 +89,10 @@ def distribution_summary(data):
 
 def main():
     # Process all dates into one csv first
-    process_data()
+    # process_data()
 
     # Listing data
-    listing_data = pd.read_csv(PROCESSED_DIR + "CRMLSListing_202401_202605_all.csv", low_memory=False)
+    listing_data = pd.read_csv(os.path.join(PROCESSED_DIR, Path("CRMLSListing_202401_202605.csv")), low_memory=False)
     missing_listing = missing_value_analysis(listing_data)
 
     missing_listing_filtered = missing_listing[missing_listing["missing_pct"] > 90]
@@ -92,13 +100,23 @@ def main():
 
     """
     Columns with > 90% missing values in the listing data (descending order):
-        ['FireplacesTotal', 'MiddleOrJuniorSchoolDistrict', 'AboveGradeFinishedArea', 'BusinessType', 
-        'TaxYear', 'CoveredSpaces', 'TaxAnnualAmount', 'ElementarySchoolDistrict', 'BelowGradeFinishedArea', 
-        'CoBuyerAgentFirstName', 'BuilderName', 'LotSizeDimensions', 'BuildingAreaTotal']
+        - 'FireplacesTotal'
+        - 'MiddleOrJuniorSchoolDistrict'
+        - 'AboveGradeFinishedArea'
+        - 'BusinessType', 
+        - 'TaxYear'
+        - 'CoveredSpaces'
+        - 'TaxAnnualAmount'
+        - 'ElementarySchoolDistrict'
+        - 'BelowGradeFinishedArea', 
+        - 'CoBuyerAgentFirstName', 
+        - 'BuilderName'
+        - 'LotSizeDimensions'
+        - 'BuildingAreaTotal'
     """
 
-    property_listing = unique_property_types(listing_data)
-    print(property_listing)
+    # property_listing = unique_property_types(listing_data)
+    # print(property_listing)
 
     """
     Unique property types for listing:
@@ -108,7 +126,7 @@ def main():
     """
 
     # Sold data
-    sold_data = pd.read_csv(PROCESSED_DIR + "CRMLSSold_202401_202605_all.csv", low_memory=False)
+    sold_data = pd.read_csv(os.path.join(PROCESSED_DIR, Path("CRMLSSold_202401_202605.csv")), low_memory=False)
     missing_sold = missing_value_analysis(sold_data)
 
     missing_sold_filtered = missing_sold[missing_sold["missing_pct"] > 90]
@@ -116,13 +134,24 @@ def main():
 
     """
     Columns with > 90% missing values in the sold data (descending order):
-        ['AboveGradeFinishedArea', 'CoveredSpaces', 'TaxAnnualAmount', 'TaxYear', 'ElementarySchoolDistrict', 
-        'FireplacesTotal', 'MiddleOrJuniorSchoolDistrict', 'BusinessType', 'WaterfrontYN', 'BelowGradeFinishedArea', 
-        'BasementYN', 'LotSizeDimensions', 'BuilderName', 'BuildingAreaTotal', 'CoBuyerAgentFirstName']
+        - 'AboveGradeFinishedArea'
+        - 'CoveredSpaces'
+        - 'TaxAnnualAmount'
+        - 'TaxYear'
+        - 'ElementarySchoolDistrict', 
+        - 'FireplacesTotal'
+        - 'MiddleOrJuniorSchoolDistrict'
+        - 'BusinessType', 'WaterfrontYN'
+        - 'BelowGradeFinishedArea', 
+        - 'BasementYN'
+        - 'LotSizeDimensions'
+        - 'BuilderName'
+        - 'BuildingAreaTotal'
+        - 'CoBuyerAgentFirstName'
     """
 
-    property_sold = unique_property_types(sold_data)
-    print(property_sold)
+    # property_sold = unique_property_types(sold_data)
+    # print(property_sold)
 
     """
     Unique property types for listing:
@@ -242,6 +271,13 @@ def main():
     99%                    292
     --------------------------
     """
+
+    ### Filter columns with > 50% missing values
+    listing_data_filtered, listing_dropped_columns = filter_missing_columns(listing_data, threshold=50)
+    sold_data_filtered, sold_dropped_columns = filter_missing_columns(sold_data, threshold=50)
+
+    listing_data_filtered.to_csv(os.path.join(FILTERED_DIR, Path("CRMLSListing_202401_202605_filtered.csv")), index=False)
+    sold_data_filtered.to_csv(os.path.join(FILTERED_DIR, Path("CRMLSSold_202401_202605_filtered.csv")), index=False)
 
 if __name__ == "__main__":
     main()

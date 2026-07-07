@@ -49,7 +49,7 @@ def hist(series, column):
 
 def box(series, column):
     plt.figure()
-    plt.boxplot(series)
+    plt.boxplot(series, orientation="h")
     plt.title(f"Distribution of {column}")
     plt.savefig(f"visuals/{column.lower()}_box.pdf", format="pdf")
 
