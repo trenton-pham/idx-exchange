@@ -1,3 +1,4 @@
+geopandas==0.14.4
 matplotlib==3.11.0
 pandas==3.0.3
 statsmodels==0.14.6

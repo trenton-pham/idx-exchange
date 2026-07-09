@@ -60,8 +60,8 @@ def process_data():
     listing_comb = pd.concat(listing, ignore_index=True)
     sold_comb = pd.concat(sold, ignore_index=True)
 
-    listing_comb.to_csv(os.path.join(PROCESSED_DIR, Path("CRMLSListing_202401_202605.csv")), index=False)
-    sold_comb.to_csv(os.path.join(PROCESSED_DIR, Path("CRMLSSold_202401_202605.csv")), index=False)
+    listing_comb.to_csv(os.path.join(PROCESSED_DIR, "CRMLSListing_202401_202605.csv"), index=False)
+    sold_comb.to_csv(os.path.join(PROCESSED_DIR, "CRMLSSold_202401_202605.csv"), index=False)
 
 def unique_property_types(data):
     return data["PropertyType"].unique()
@@ -276,8 +276,8 @@ def main():
     listing_data_filtered, listing_dropped_columns = filter_missing_columns(listing_data, threshold=50)
     sold_data_filtered, sold_dropped_columns = filter_missing_columns(sold_data, threshold=50)
 
-    listing_data_filtered.to_csv(os.path.join(FILTERED_DIR, Path("CRMLSListing_202401_202605_filtered.csv")), index=False)
-    sold_data_filtered.to_csv(os.path.join(FILTERED_DIR, Path("CRMLSSold_202401_202605_filtered.csv")), index=False)
+    listing_data_filtered.to_csv(os.path.join(FILTERED_DIR, "CRMLSListing_202401_202605_filtered.csv"), index=False)
+    sold_data_filtered.to_csv(os.path.join(FILTERED_DIR, "CRMLSSold_202401_202605_filtered.csv"), index=False)
 
 if __name__ == "__main__":
     main()

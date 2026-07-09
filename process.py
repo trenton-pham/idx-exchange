@@ -1,9 +1,9 @@
 import os
 import pandas as pd
+from pathlib import Path
 
-
-RAW_DIR = "data/raw/"
-PROCESSED_DIR = "data/processed/"
+RAW_DIR = Path("data/raw/")
+PROCESSED_DIR = Path("data/processed/")
 
 START_YEAR = 2024
 CURR_YEAR = 2026
