@@ -2,12 +2,13 @@ import os
 import pandas as pd
 from pathlib import Path
 
-RAW_DIR = Path("data/raw/")
-PROCESSED_DIR = Path("data/processed/")
+BASE_DIR = Path(__file__).resolve().parent
+RAW_DIR = BASE_DIR / "data" / "raw"
+PROCESSED_DIR = BASE_DIR / "data" / "processed"
 
 START_YEAR = 2024
 CURR_YEAR = 2026
-CURR_MONTH = 5
+CURR_MONTH = 6
 START_MONTH = 1
 END_MONTH = 12
 
@@ -24,7 +25,7 @@ for year in range(START_YEAR, CURR_YEAR + 1):
         if year == CURR_YEAR and month > CURR_MONTH:
             break
 
-        listing_file = f"{RAW_DIR}CRMLSListing{year}{month:02d}.csv"
+        listing_file = RAW_DIR / f"CRMLSListing{year}{month:02d}.csv"
 
         if os.path.exists(listing_file):
             df_listing = pd.read_csv(listing_file, low_memory=False)
@@ -32,13 +33,13 @@ for year in range(START_YEAR, CURR_YEAR + 1):
         else:
             continue
 
-        filled_sold_file = f"{RAW_DIR}CRMLSSold{year}{month:02d}_filled.csv"
+        filled_sold_file = RAW_DIR / f"CRMLSSold{year}{month:02d}_filled.csv"
         
         if os.path.exists(filled_sold_file):
             df_sold = pd.read_csv(filled_sold_file, low_memory=False)
         
         else:
-            base_sold_file = f"{RAW_DIR}CRMLSSold{year}{month:02d}.csv"
+            base_sold_file = RAW_DIR / f"CRMLSSold{year}{month:02d}.csv"
             if os.path.exists(base_sold_file):
                 df_sold = pd.read_csv(base_sold_file, low_memory=False)
 
@@ -58,8 +59,8 @@ print(listing_comb.shape[0], sold_comb.shape[0])
 
 """
 Confirmed row counts before filtering:
-- Listings: 930327
-- Sold: 639859
+- Listings: 967777
+- Sold: 665370
 """
 
 listing_comb = listing_comb[listing_comb["PropertyType"] == "Residential"]
@@ -72,6 +73,6 @@ print(listing_comb.shape[0], sold_comb.shape[0])
 
 """
 Confirmed row counts after filtering for Residential property type:
-- Listings: 591998
-- Sold: 430427
+- Listings: 616072
+- Sold: 447964
 """
