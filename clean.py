@@ -10,8 +10,8 @@ sold_path = Path("data/mortgage/CRMLSSold_202401_202605_with_mortgage.csv")
 
 output_dir = Path("data/cleaned")
 
-listing = pd.read_csv(listing_path)
-sold = pd.read_csv(sold_path)
+listing = pd.read_csv(listing_path, low_memory=False)
+sold = pd.read_csv(sold_path, low_memory=False)
 
 def to_datetime(df, date_columns): 
     df[date_columns] = df[date_columns].apply(pd.to_datetime, errors="coerce")
@@ -108,5 +108,5 @@ Dropping redundant columns
 """
 sold.drop(columns=["PropertyType", "MlsStatus", "ListingKey"], inplace=True)
 
-listing.to_csv(os.path.join(output_dir, "CRMLSListing_cleaned.csv"))
-sold.to_csv(os.path.join(output_dir, "CRMLSSold_cleaned.csv"))
+listing.to_csv(os.path.join(output_dir, "CRMLSListing_cleaned.csv"), index=False)
+sold.to_csv(os.path.join(output_dir, "CRMLSSold_cleaned.csv"), index=False)
