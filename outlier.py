@@ -1,6 +1,6 @@
 import pandas as pd
 
-sold_path = "data/cleaned/CRMLSSold_cleaned.csv"
+sold_path = "data/feature_engineer/CRMLSSold_feature_engineered.csv"
 df = pd.read_csv(sold_path, low_memory=False)
 
 print(f"Before outlier filtering", df.shape)
