@@ -276,9 +276,9 @@ median                  18
 --------------------------
     """
 
-    ### Filter columns with > 50% missing values
-    listing_data_filtered, listing_dropped_columns = filter_missing_columns(listing_data, threshold=50)
-    sold_data_filtered, sold_dropped_columns = filter_missing_columns(sold_data, threshold=50)
+    ### Filter columns with > 90% missing values
+    listing_data_filtered, listing_dropped_columns = filter_missing_columns(listing_data, threshold=90)
+    sold_data_filtered, sold_dropped_columns = filter_missing_columns(sold_data, threshold=90)
 
     listing_data_filtered.to_csv(os.path.join(FILTERED_DIR, "CRMLSListing_202401_202605_filtered.csv"), index=False)
     sold_data_filtered.to_csv(os.path.join(FILTERED_DIR, "CRMLSSold_202401_202605_filtered.csv"), index=False)

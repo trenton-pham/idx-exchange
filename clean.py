@@ -90,7 +90,7 @@ def filter_nono_values(df, columns):
         df = df[df[column] >= 0]
     return df
 
-listing_columns = ["LivingArea", "DaysOnMarket", "BedroomsTotal", 
+listing_columns = ["DaysOnMarket", "BedroomsTotal", 
                "BathroomsTotalInteger"]
 
 sold_columns = listing_columns + ["ClosePrice"]
@@ -98,6 +98,8 @@ sold_columns = listing_columns + ["ClosePrice"]
 listing = filter_nono_values(listing, listing_columns)
 sold = filter_nono_values(sold, sold_columns)
 
+listing = listing[listing["LivingArea"] > 80]
+sold = sold[sold["LivingArea"] > 80]
 
 """
 Dropping redundant columns
@@ -106,7 +108,10 @@ Dropping redundant columns
 - ListingKey: Redundant with `ListingKeyNumeric`
 - year_month: Created `Month` and `Year` column
 """
-sold.drop(columns=["PropertyType", "MlsStatus", "ListingKey"], inplace=True)
+sold.drop(columns=["PropertyType", "MlsStatus", "ListingKey", 
+                   "BuyerAgencyCompensationType", "OriginatingSystemName", 
+                   "OriginatingSystemSubName", "AttachedGarageYN",
+                   "FireplaceYN"], inplace=True)
 
 listing.to_csv(os.path.join(output_dir, "CRMLSListing_cleaned.csv"), index=False)
 sold.to_csv(os.path.join(output_dir, "CRMLSSold_cleaned.csv"), index=False)
