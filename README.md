@@ -18,25 +18,27 @@ This project prepares California Regional Multiple Listing Service (CRMLS) listi
 ```text
 idx-exchange/
 ├── data/
-│   ├── raw/               # Original monthly CRMLS CSV files
-│   ├── processed/         # Combined residential listing and sold datasets
-│   ├── filtered/          # Datasets after high-missingness columns are removed
-│   ├── mortgage/          # Datasets enriched with monthly mortgage rates
-│   ├── cleaned/           # Cleaned listing and sold datasets
-│   ├── post_outlier/      # Sold data after outlier filtering
-│   └── city_boundaries/   # GeoJSON boundaries used for California filtering
-├── docs/                  # Project reference documents
-├── summary_stat/          # Generated descriptive-statistics CSV files
-├── visuals/               # Generated histogram and box-plot PDFs
-├── process.py             # Week 1 data processing
-├── distribution.py        # Weeks 2–3 distribution analysis
-├── validation.py          # Weeks 2–3 data validation
-├── mortgage_fetch.py      # Weeks 2–3 mortgage-rate enrichment
-├── clean.ipynb            # Weeks 4–5 data cleaning notebook
-├── clean.py               # Week 6 reusable cleaning script
-├── feature_engineer.ipynb # Week 6 feature engineering and summaries
-├── outlier.py             # Week 7 sale-price outlier filtering
-└── requirements.txt       # Python package versions
+│   ├── raw/                    # Original monthly CRMLS CSV files
+│   ├── processed/              # Combined residential listing and sold datasets
+│   ├── filtered/               # Datasets after high-missingness columns are removed
+│   ├── mortgage/               # Datasets enriched with monthly mortgage rates
+│   ├── cleaned/                # Cleaned listing and sold datasets
+│   ├── post_outlier/           # Sold data after outlier filtering
+│   └── city_boundaries/        # GeoJSON boundaries used for California filtering
+├── notebooks/ 
+│   ├── clean.ipynb             # Weeks 4–5 data cleaning notebook
+│   └── feature_engineer.ipynb  # Week 6 feature engineering and summaries
+├── docs/                       # Project reference documents
+├── summary_stat/               # Generated descriptive-statistics CSV files
+├── visuals/                    # Generated histogram and box-plot PDFs
+├── process.py                  # Week 1 data processing
+├── distribution.py             # Weeks 2–3 distribution analysis
+├── validation.py               # Weeks 2–3 data validation
+├── mortgage_fetch.py           # Weeks 2–3 mortgage-rate enrichment
+├── clean.py                    # Week 6 reusable cleaning script
+├── outlier.py                  # Week 7 sale-price outlier filtering
+├── pipeline.py                 # Combined single script
+└── requirements.txt            # Python package versions
 ```
 
 The `data/` directory represents the main pipeline stages. Files move from original monthly inputs in `raw/`, to combined files in `processed/`, reduced-column files in `filtered/`, mortgage-enriched files in `mortgage/`, and cleaned outputs in `cleaned/`. The `post_outlier/` directory contains sold data after the current price-outlier filter is applied. Generated statistics and charts are stored separately in `summary_stat/` and `visuals/`.
@@ -54,3 +56,4 @@ The `data/` directory represents the main pipeline stages. Files move from origi
 | Week 6 | `feature_engineer.ipynb` | Creates price ratios, price per square foot, year/month fields, and listing-to-contract and contract-to-close durations; summarizes key market measures by property subtype, county, MLS area, listing office, and buyer office. |
 | Week 6 | `feature_engineer.py` | Converts the notebook feature engineering workflow into a reusable script; writes feature engineered files into `data/feature_engineer/`.  |
 | Week 7 | `outlier.py` | Applies a three-IQR boundary to `ClosePrice`, reports row counts before and after filtering, and writes the resulting sold dataset to `data/post_outlier/`. |
+| Week 8 | `pipeline.py` | Combines all .py scripts into a single script in case changes are made to .csv or .py files. Tableau dashboards are WIP. |

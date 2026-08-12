@@ -13,6 +13,17 @@ output_dir = Path("data/cleaned")
 listing = pd.read_csv(listing_path, low_memory=False)
 sold = pd.read_csv(sold_path, low_memory=False)
 
+# Removing duplicate columns created by mortgage_fetch.py
+def clean_duplicate_columns(df):
+    columns = df.columns
+    for column in columns:
+        if column.endswith(".1"):
+            df.drop(column, axis=1, inplace=True)
+    return df
+
+listing = clean_duplicate_columns(listing)
+
+# Convert date columns into datetime format
 def to_datetime(df, date_columns): 
     df[date_columns] = df[date_columns].apply(pd.to_datetime, errors="coerce")
     return df
@@ -54,6 +65,10 @@ listing = list_agent(listing)
 sold = list_agent(sold)
 
 # Filtering coordinates to California (note: may change to using zip-code)
+# Normalizing coordinates to negative due to normalizing error
+listing["Longitude"] = listing["Longitude"].apply(lambda x: -x if x > 0 else x) 
+sold["Longitude"] = sold["Longitude"].apply(lambda x: -x if x > 0 else x)
+
 city_path = Path("data/city_boundaries/City_and_County_Boundaries.geojson")
 city_gdf = gpd.read_file(city_path)
 city_gdf = city_gdf.set_crs("EPSG:4326")
