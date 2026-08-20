@@ -73,6 +73,40 @@ sold = list_agent(sold)
 listing = listing[listing["StateOrProvince"] == "CA"]
 sold = sold[sold["StateOrProvince"] == "CA"]
 
+# Filter zip codes to California
+valid_zip_codes = set(
+    pd.read_csv(
+        "data/zip/california_valid_zip_codes.csv",
+        dtype={"ZIP_CODE": "string"},
+    )["ZIP_CODE"]
+)
+
+def filter_zip_codes(df):
+    postal_code = df["PostalCode"].astype("string").str.strip()
+
+    # Handles 12345 and 12345-6789.
+    zip5 = postal_code.str.extract(
+        r"^(\d{5})(?:-\d{4})?$",
+        expand=False,
+    )
+
+    valid = zip5.isin(valid_zip_codes)
+
+    df = df.loc[valid].copy()
+    df["PostalCode"] = zip5.loc[valid]
+    return df
+
+listing = filter_zip_codes(listing)
+sold = filter_zip_codes(sold)
+
+# Remove NaN cities
+def remove_nan_cities(df):
+    df = df[df["City"].notna()]
+    return df
+
+listing = remove_nan_cities(listing)
+sold = remove_nan_cities(sold)
+
 # Normalizing coordinates to negative due to normalizing error (flipping signs)
 listing["Longitude"] = listing["Longitude"].apply(lambda x: -x if x > 0 else x) 
 sold["Longitude"] = sold["Longitude"].apply(lambda x: -x if x > 0 else x)
@@ -138,35 +172,6 @@ sold.drop(columns=["PropertyType", "MlsStatus", "ListingKey",
                    "BuyerAgencyCompensationType", "OriginatingSystemName", 
                    "OriginatingSystemSubName", "AttachedGarageYN",
                    "FireplaceYN"], inplace=True)
-
-# Filter zip codes to California
-def filter_zip_codes(df):
-    postal_code = df["PostalCode"].astype("string").str.strip()
-
-    # Accept either 12345 or 12345-6789 and extract the base ZIP.
-    zip5 = postal_code.str.extract(
-        r"^(\d{5})(?:-\d{4})?$",
-        expand=False,
-    )
-
-    zip_number = pd.to_numeric(zip5, errors="coerce")
-    valid_zip = zip_number.between(90001, 96162)
-
-    df = df.loc[valid_zip].copy()
-    df["PostalCode"] = zip5.loc[valid_zip]
-
-    return df
-
-listing = filter_zip_codes(listing)
-sold = filter_zip_codes(sold)
-
-# Remove NaN cities
-def remove_nan_cities(df):
-    df = df[df["City"].notna()]
-    return df
-
-listing = remove_nan_cities(listing)
-sold = remove_nan_cities(sold)
 
 listing.to_csv(os.path.join(output_dir, "CRMLSListing_cleaned.csv"), index=False)
 sold.to_csv(os.path.join(output_dir, "CRMLSSold_cleaned.csv"), index=False)
