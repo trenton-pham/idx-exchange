@@ -30,12 +30,15 @@ def to_datetime(df, date_columns):
 
 
 listing_date_columns = ["ListingContractDate", "ContractStatusChangeDate"]
-sold_date_columns = date_columns = [
+sold_date_columns = [
         "ListingContractDate",
         "PurchaseContractDate",
         "CloseDate",
         "ContractStatusChangeDate",
     ]
+
+listing = to_datetime(listing, listing_date_columns)
+sold = to_datetime(sold, sold_date_columns)
 
 sold["listing_after_close_flag"] = sold["ListingContractDate"] > sold["CloseDate"]
 sold["purchase_after_close_flag"] = sold["PurchaseContractDate"] > sold["CloseDate"]
@@ -64,8 +67,13 @@ def list_agent(df):
 listing = list_agent(listing)
 sold = list_agent(sold)
 
-# Filtering coordinates to California (note: may change to using zip-code)
-# Normalizing coordinates to negative due to normalizing error
+# Filtering coordinates to California (note: may change to using zip-code or state data)
+
+# Filter to California properties
+listing = listing[listing["StateOrProvince"] == "CA"]
+sold = sold[sold["StateOrProvince"] == "CA"]
+
+# Normalizing coordinates to negative due to normalizing error (flipping signs)
 listing["Longitude"] = listing["Longitude"].apply(lambda x: -x if x > 0 else x) 
 sold["Longitude"] = sold["Longitude"].apply(lambda x: -x if x > 0 else x)
 
@@ -75,7 +83,7 @@ city_gdf = city_gdf.set_crs("EPSG:4326")
 
 california_boundary = city_gdf.dissolve()
 
-def filter_coordinates(df):
+def flag_coordinates(df):
     df = df.dropna(subset=["Latitude", "Longitude"])
     
     df_points = gpd.GeoDataFrame(
@@ -84,20 +92,23 @@ def filter_coordinates(df):
         crs="EPSG:4326",
     )
 
-    df = (gpd.sjoin(
+    df = gpd.sjoin(
             df_points,
             california_boundary[["geometry"]],
             how="inner",
             predicate="within",
         )
-        .drop(columns=["geometry", "index_right"])
-        .pipe(pd.DataFrame)
+
+    df["coordinates_in_california"] = (
+        df["Latitude"].notna()
+        & df["Longitude"].notna()
+        & df["index_right"].notna()
     )
 
-    return df
+    return pd.DataFrame(df.drop(columns=["geometry", "index_right"]))
 
-listing = filter_coordinates(listing)
-sold = filter_coordinates(sold)
+listing = flag_coordinates(listing)
+sold = flag_coordinates(sold)
 
 # Filtering values that aren't possible
 def filter_nono_values(df, columns):
@@ -113,6 +124,7 @@ sold_columns = listing_columns + ["ClosePrice"]
 listing = filter_nono_values(listing, listing_columns)
 sold = filter_nono_values(sold, sold_columns)
 
+# Filtering out properties with LivingArea less than 80 sqft
 listing = listing[listing["LivingArea"] > 80]
 sold = sold[sold["LivingArea"] > 80]
 
@@ -121,12 +133,40 @@ Dropping redundant columns
 - PropertyType: Assumed to be `Residential`
 - MlsStatus: Constant `Closed` value
 - ListingKey: Redundant with `ListingKeyNumeric`
-- year_month: Created `Month` and `Year` column
 """
 sold.drop(columns=["PropertyType", "MlsStatus", "ListingKey", 
                    "BuyerAgencyCompensationType", "OriginatingSystemName", 
                    "OriginatingSystemSubName", "AttachedGarageYN",
                    "FireplaceYN"], inplace=True)
+
+# Filter zip codes to California
+def filter_zip_codes(df):
+    postal_code = df["PostalCode"].astype("string").str.strip()
+
+    # Accept either 12345 or 12345-6789 and extract the base ZIP.
+    zip5 = postal_code.str.extract(
+        r"^(\d{5})(?:-\d{4})?$",
+        expand=False,
+    )
+
+    zip_number = pd.to_numeric(zip5, errors="coerce")
+    valid_zip = zip_number.between(90001, 96162)
+
+    df = df.loc[valid_zip].copy()
+    df["PostalCode"] = zip5.loc[valid_zip]
+
+    return df
+
+listing = filter_zip_codes(listing)
+sold = filter_zip_codes(sold)
+
+# Remove NaN cities
+def remove_nan_cities(df):
+    df = df[df["City"].notna()]
+    return df
+
+listing = remove_nan_cities(listing)
+sold = remove_nan_cities(sold)
 
 listing.to_csv(os.path.join(output_dir, "CRMLSListing_cleaned.csv"), index=False)
 sold.to_csv(os.path.join(output_dir, "CRMLSSold_cleaned.csv"), index=False)
