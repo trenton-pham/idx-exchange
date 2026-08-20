@@ -99,13 +99,14 @@ def filter_zip_codes(df):
 listing = filter_zip_codes(listing)
 sold = filter_zip_codes(sold)
 
-# Remove NaN cities
-def remove_nan_cities(df):
-    df = df[df["City"].notna()]
-    return df
+# Fill NaN values in City
+listing["City"] = listing["City"].fillna("Unknown")
+sold["City"] = sold["City"].fillna("Unknown")
 
-listing = remove_nan_cities(listing)
-sold = remove_nan_cities(sold)
+# Fill NaN values in PropertySubType
+listing["PropertySubType"] = listing["PropertySubType"].fillna("Unknown")
+sold["PropertySubType"] = sold["PropertySubType"].fillna("Unknown")
+
 
 # Normalizing coordinates to negative due to normalizing error (flipping signs)
 listing["Longitude"] = listing["Longitude"].apply(lambda x: -x if x > 0 else x) 
@@ -161,6 +162,10 @@ sold = filter_nono_values(sold, sold_columns)
 # Filtering out properties with LivingArea less than 80 sqft
 listing = listing[listing["LivingArea"] > 80]
 sold = sold[sold["LivingArea"] > 80]
+
+# Clearing NaN PropertySubType values
+listing["PropertySubType"] = listing["PropertySubType"].fillna("Unknown")
+sold["PropertySubType"] = sold["PropertySubType"].fillna("Unknown")
 
 """
 Dropping redundant columns
