@@ -31,6 +31,6 @@ fix_list_price("PI24198548", 525000)
 fix_list_price("OC24065101", 695000)
 
 df = df[df["CloseToOriginalListRatio"] <= 1.5]
-df = df[df["CloseToOriginalListRatio"] >= 0.5]
+df = df[df["CloseToOriginalListRatio"] >= 0.75]
 
 df.to_csv("data/post_outlier/CRMLSSold_cleaned_out.csv", index=False)       

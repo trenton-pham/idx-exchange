@@ -59,13 +59,20 @@ negative_timeline_flag       290
 """
 
 # Dropping redundant listing agent columns
-def list_agent(df):
+def list_agent_drop(df):
     columns = ["ListAgentEmail", "ListAgentFirstName", "ListAgentLastName"]
     df.drop(columns=columns, inplace=True)
     return df
 
-listing = list_agent(listing)
-sold = list_agent(sold)
+listing = list_agent_drop(listing)
+sold = list_agent_drop(sold)
+
+
+listing["ListAgentFullName"] = listing["ListAgentFullName"].str.strip().str.upper()
+sold["ListAgentFullName"] = sold["ListAgentFullName"].str.strip().str.upper()
+
+listing["ListOfficeName"] = listing["ListOfficeName"].str.strip().str.upper()
+sold["ListOfficeName"] = sold["ListOfficeName"].str.strip().str.upper()
 
 # Filtering coordinates to California (note: may change to using zip-code or state data)
 
@@ -119,8 +126,6 @@ city_gdf = city_gdf.set_crs("EPSG:4326")
 california_boundary = city_gdf.dissolve()
 
 def flag_coordinates(df):
-    df = df.dropna(subset=["Latitude", "Longitude"])
-    
     df_points = gpd.GeoDataFrame(
         df,
         geometry=gpd.points_from_xy(df["Longitude"], df["Latitude"]),

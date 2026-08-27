@@ -43,5 +43,5 @@ sold_with_rates[
 
 # Save new datasets with mortgage rates
 output_dir = Path.Path("data/mortgage")
-listings.to_csv(os.path.join(output_dir, "CRMLSListing_202401_202605_with_mortgage.csv"), index=False)
-sold.to_csv(os.path.join(output_dir, "CRMLSSold_202401_202605_with_mortgage.csv"), index=False)
+listings_with_rates.to_csv(os.path.join(output_dir, "CRMLSListing_202401_202605_with_mortgage.csv"), index=False)
+sold_with_rates.to_csv(os.path.join(output_dir, "CRMLSSold_202401_202605_with_mortgage.csv"), index=False)
