@@ -68,11 +68,11 @@ listing = list_agent_drop(listing)
 sold = list_agent_drop(sold)
 
 
-listing["ListAgentFullName"] = listing["ListAgentFullName"].str.strip().str.upper()
-sold["ListAgentFullName"] = sold["ListAgentFullName"].str.strip().str.upper()
+listing["ListAgentFullName"] = listing["ListAgentFullName"].str.strip().str.title()
+sold["ListAgentFullName"] = sold["ListAgentFullName"].str.strip().str.title()
 
-listing["ListOfficeName"] = listing["ListOfficeName"].str.strip().str.upper()
-sold["ListOfficeName"] = sold["ListOfficeName"].str.strip().str.upper()
+listing["ListOfficeName"] = listing["ListOfficeName"].str.strip().str.title()
+sold["ListOfficeName"] = sold["ListOfficeName"].str.strip().str.title()
 
 # Filtering coordinates to California (note: may change to using zip-code or state data)
 

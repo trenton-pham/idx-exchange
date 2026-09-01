@@ -57,4 +57,8 @@ The `data/` directory represents the main pipeline stages. Files move from origi
 | Week 6 | `feature_engineer.py` | Converts the notebook feature engineering workflow into a reusable script; writes feature engineered files into `data/feature_engineer/`.  |
 | Week 7 | `outlier.py` | Applies a three-IQR boundary to `ClosePrice`, reports row counts before and after filtering, and writes the resulting sold dataset to `data/post_outlier/`. |
 | Week 8 | `pipeline.py` | Combines all .py scripts into a single script in case changes are made to .csv or .py files. Tableau dashboards are WIP. |
-| Week 9-10 | Tableau Workbook | https://public.tableau.com/views/market_competitive_analysis/MarketAnalysis?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link |
+| Week 9-10 | Tableau Workbook | Visualize and communicate market trends and competitive analysis with broker firms. |
+
+### Tableau Visualizations
+- Market Analysis: https://public.tableau.com/views/CaliforniaRealEstateMarketAnalysis_17882190871160/MarketAnalysis?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link
+- Competitive Analysis: https://public.tableau.com/views/CaliforniaRealEstateCompetitiveAnalysis_17882211560250/CompetitiveAnalysisDashboard?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link
