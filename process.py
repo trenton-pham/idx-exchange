@@ -66,8 +66,8 @@ Confirmed row counts before filtering:
 listing_comb = listing_comb[listing_comb["PropertyType"] == "Residential"]
 sold_comb = sold_comb[sold_comb["PropertyType"] == "Residential"]
 
-listing_comb.to_csv(os.path.join(PROCESSED_DIR, "CRMLSListing_202401_202605.csv"), index=False)
-sold_comb.to_csv(os.path.join(PROCESSED_DIR, "CRMLSSold_202401_202605.csv"), index=False)
+listing_comb.to_csv(os.path.join(PROCESSED_DIR, "CRMLSListing.csv"), index=False)
+sold_comb.to_csv(os.path.join(PROCESSED_DIR, "CRMLSSold.csv"), index=False)
 
 print(listing_comb.shape[0], sold_comb.shape[0])
 

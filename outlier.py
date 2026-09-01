@@ -10,27 +10,18 @@ lower = Q1 - 3.0 * IQR
 upper = Q3 + 3.0 * IQR 
 df = df[(df['ClosePrice'] >= lower) & (df['ClosePrice'] <= upper)]
 
-# Fix ClosePrice values that are incorrect
-to_drop = ["P1-22708", "41049105", "41079356"]
-df = df[~df["ListingId"].isin(to_drop)]
-
-def fix_close_price(ListingId, value):
-    df.loc[df["ListingId"] == ListingId, "ClosePrice"] = value
-
-def fix_list_price(ListingId, value):
-    df.loc[df["ListingId"] == ListingId, "ListPrice"] = value
-
-fix_close_price("219137367DA", 1750000)
-fix_close_price("224002893", 1150000)
-fix_close_price("219113154PS", 380000)
-fix_close_price("V1-31998", 500000)
-fix_close_price("219134383PS", 485000)
-fix_close_price("P1-17580", 675000)
-
-fix_list_price("PI24198548", 525000)
-fix_list_price("OC24065101", 695000)
-
 df = df[df["CloseToOriginalListRatio"] <= 1.5]
 df = df[df["CloseToOriginalListRatio"] >= 0.75]
+
+# confirm changed ClosePrice
+print(df["ClosePrice"].loc[df["ListingId"] == "219137367DA"])
+print(df["ClosePrice"].loc[df["ListingId"] == "224002893"])
+print(df["ClosePrice"].loc[df["ListingId"] == "219113154PS"])
+print(df["ClosePrice"].loc[df["ListingId"] == "V1-31998"])
+print(df["ClosePrice"].loc[df["ListingId"] == "219134383PS"])
+print(df["ClosePrice"].loc[df["ListingId"] == "P1-17580"])
+
+print(df["OriginalListPrice"].loc[df["ListingId"] == "PI24198548"])
+print(df["OriginalListPrice"].loc[df["ListingId"] == "OC24065101"])
 
 df.to_csv("data/post_outlier/CRMLSSold_cleaned_out.csv", index=False)       

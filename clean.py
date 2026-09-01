@@ -5,8 +5,8 @@ import pandas as pd
 import geopandas as gpd
 
 
-listing_path = Path("data/mortgage/CRMLSListing_202401_202605_with_mortgage.csv")
-sold_path = Path("data/mortgage/CRMLSSold_202401_202605_with_mortgage.csv")
+listing_path = Path("data/mortgage/CRMLSListing_with_mortgage.csv")
+sold_path = Path("data/mortgage/CRMLSSold_with_mortgage.csv")
 
 output_dir = Path("data/cleaned")
 
@@ -50,13 +50,17 @@ timeline_flag_columns = [
     "negative_timeline_flag",
 ]
 
-print(sold[timeline_flag_columns].sum())
+# print(sold[timeline_flag_columns].sum())
 """
 Flag row count summary:
 listing_after_close_flag      67
 purchase_after_close_flag    239
 negative_timeline_flag       290
 """
+
+# Clear invalid listing dates
+listing_after_close = sold[sold["listing_after_close_flag"] == True]
+sold.loc[listing_after_close.index, "ListingContractDate"] = pd.NaT
 
 # Dropping redundant listing agent columns
 def list_agent_drop(df):
@@ -135,7 +139,7 @@ def flag_coordinates(df):
     df = gpd.sjoin(
             df_points,
             california_boundary[["geometry"]],
-            how="inner",
+            how="left",
             predicate="within",
         )
 
@@ -150,10 +154,14 @@ def flag_coordinates(df):
 listing = flag_coordinates(listing)
 sold = flag_coordinates(sold)
 
-# Filtering values that aren't possible
-def filter_nono_values(df, columns):
+# print("Coordinates in California flag:")
+# print(listing["coordinates_in_california"].value_counts())
+# print(sold["coordinates_in_california"].value_counts())
+
+# Flag values that aren't possible
+def flag_nono_values(df, columns):
     for column in columns:
-        df = df[df[column] >= 0]
+        df[f"{column}Flag"] = df[column] < 0
     return df
 
 listing_columns = ["DaysOnMarket", "BedroomsTotal", 
@@ -161,12 +169,14 @@ listing_columns = ["DaysOnMarket", "BedroomsTotal",
 
 sold_columns = listing_columns + ["ClosePrice"]
 
-listing = filter_nono_values(listing, listing_columns)
-sold = filter_nono_values(sold, sold_columns)
+listing = flag_nono_values(listing, listing_columns)
+sold = flag_nono_values(sold, sold_columns)
 
 # Filtering out properties with LivingArea less than 80 sqft
-listing = listing[listing["LivingArea"] > 80]
-sold = sold[sold["LivingArea"] > 80]
+listing["LivingAreaFlag"] = listing["LivingArea"] < 80
+sold["LivingAreaFlag"] = sold["LivingArea"] < 80
+
+print(sold[["DaysOnMarketFlag", "BedroomsTotalFlag", "BathroomsTotalIntegerFlag", "LivingAreaFlag"]].value_counts())
 
 # Clearing NaN PropertySubType values
 listing["PropertySubType"] = listing["PropertySubType"].fillna("Unknown")
@@ -182,6 +192,27 @@ sold.drop(columns=["PropertyType", "MlsStatus", "ListingKey",
                    "BuyerAgencyCompensationType", "OriginatingSystemName", 
                    "OriginatingSystemSubName", "AttachedGarageYN",
                    "FireplaceYN"], inplace=True)
+
+# fixing error in data entry
+to_drop = ["P1-22708", "41049105", "41079356"]
+sold = sold[~sold["ListingId"].isin(to_drop)]
+
+def fix_close_price(ListingId, value):
+    sold.loc[sold["ListingId"] == ListingId, "ClosePrice"] = value
+
+def fix_og_list_price(ListingId, value):
+    sold.loc[sold["ListingId"] == ListingId, "OriginalListPrice"] = value
+    sold.loc[sold["ListingId"] == ListingId, "ListPrice"] = value
+
+fix_close_price("219137367DA", 1750000)
+fix_close_price("224002893", 1150000)
+fix_close_price("219113154PS", 380000)
+fix_close_price("V1-31998", 500000)
+fix_close_price("219134383PS", 485000)
+fix_close_price("P1-17580", 675000)
+
+fix_og_list_price("PI24198548", 525000)
+fix_og_list_price("OC24065101", 695000)
 
 listing.to_csv(os.path.join(output_dir, "CRMLSListing_cleaned.csv"), index=False)
 sold.to_csv(os.path.join(output_dir, "CRMLSSold_cleaned.csv"), index=False)

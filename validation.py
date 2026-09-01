@@ -3,65 +3,8 @@ from statsmodels.stats.descriptivestats import Description
 from pathlib import Path
 import os
 
-RAW_DIR = Path("data/raw/")
 PROCESSED_DIR = Path("data/processed/")
 FILTERED_DIR = Path("data/filtered/")
-
-def process_data():
-    """
-    Copied from process.py in week 1 script
-    """
-    START_YEAR = 2024
-    CURR_YEAR = 2026
-    CURR_MONTH = 5
-    START_MONTH = 1
-    END_MONTH = 12
-
-    listing = []
-    sold = []
-
-    listing_count = []
-    sold_count = []
-
-    for year in range(START_YEAR, CURR_YEAR + 1):
-
-        for month in range(START_MONTH, END_MONTH + 1):
-
-            if year == CURR_YEAR and month > CURR_MONTH:
-                break
-
-            listing_file = f"{RAW_DIR}CRMLSListing{year}{month:02d}.csv"
-
-            if os.path.exists(listing_file):
-                df_listing = pd.read_csv(listing_file, low_memory=False)
-
-            else:
-                continue
-
-            filled_sold_file = f"{RAW_DIR}CRMLSSold{year}{month:02d}_filled.csv"
-            
-            if os.path.exists(filled_sold_file):
-                df_sold = pd.read_csv(filled_sold_file, low_memory=False)
-            
-            else:
-                base_sold_file = f"{RAW_DIR}CRMLSSold{year}{month:02d}.csv"
-                if os.path.exists(base_sold_file):
-                    df_sold = pd.read_csv(base_sold_file, low_memory=False)
-
-                else:
-                    continue
-
-            listing.append(df_listing)
-            listing_count.append(df_listing.shape[0])
-
-            sold.append(df_sold)
-            sold_count.append(df_sold.shape[0])
-
-    listing_comb = pd.concat(listing, ignore_index=True)
-    sold_comb = pd.concat(sold, ignore_index=True)
-
-    listing_comb.to_csv(os.path.join(PROCESSED_DIR, "CRMLSListing_202401_202605.csv"), index=False)
-    sold_comb.to_csv(os.path.join(PROCESSED_DIR, "CRMLSSold_202401_202605.csv"), index=False)
 
 def unique_property_types(data):
     return data["PropertyType"].unique()
@@ -88,11 +31,9 @@ def distribution_summary(data):
         print("\n")
 
 def main():
-    # Process all dates into one csv first
-    # process_data()
 
     # Listing data
-    listing_data = pd.read_csv(os.path.join(PROCESSED_DIR, Path("CRMLSListing_202401_202605.csv")), low_memory=False)
+    listing_data = pd.read_csv(os.path.join(PROCESSED_DIR, Path("CRMLSListing.csv")), low_memory=False)
     missing_listing = missing_value_analysis(listing_data)
 
     missing_listing_filtered = missing_listing[missing_listing["missing_pct"] > 90]
@@ -126,7 +67,7 @@ def main():
     """
 
     # Sold data
-    sold_data = pd.read_csv(os.path.join(PROCESSED_DIR, Path("CRMLSSold_202401_202605.csv")), low_memory=False)
+    sold_data = pd.read_csv(os.path.join(PROCESSED_DIR, Path("CRMLSSold.csv")), low_memory=False)
     missing_sold = missing_value_analysis(sold_data)
 
     missing_sold_filtered = missing_sold[missing_sold["missing_pct"] > 90]
@@ -280,8 +221,8 @@ median                  18
     listing_data_filtered, listing_dropped_columns = filter_missing_columns(listing_data, threshold=90)
     sold_data_filtered, sold_dropped_columns = filter_missing_columns(sold_data, threshold=90)
 
-    listing_data_filtered.to_csv(os.path.join(FILTERED_DIR, "CRMLSListing_202401_202605_filtered.csv"), index=False)
-    sold_data_filtered.to_csv(os.path.join(FILTERED_DIR, "CRMLSSold_202401_202605_filtered.csv"), index=False)
+    listing_data_filtered.to_csv(os.path.join(FILTERED_DIR, "CRMLSListing_filtered.csv"), index=False)
+    sold_data_filtered.to_csv(os.path.join(FILTERED_DIR, "CRMLSSold_filtered.csv"), index=False)
 
 if __name__ == "__main__":
     main()
