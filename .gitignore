@@ -1,9 +1,10 @@
 data/
-
 docs/
-
-tableau/
-
-visuals/
-
-summary_stat/
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.ruff_cache/
+.env
+.env.*
+!.env.example

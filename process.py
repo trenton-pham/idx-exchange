@@ -1,78 +1,123 @@
-import os
-import pandas as pd
+"""Combine available monthly CRMLS files into residential datasets."""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
 from pathlib import Path
+
+import pandas as pd
+
 
 BASE_DIR = Path(__file__).resolve().parent
 RAW_DIR = BASE_DIR / "data" / "raw"
 PROCESSED_DIR = BASE_DIR / "data" / "processed"
 
-START_YEAR = 2024
-CURR_YEAR = 2026
-CURR_MONTH = 7
-START_MONTH = 1
-END_MONTH = 12
+LISTING_PATTERN = re.compile(r"^CRMLSListing(\d{6})\.csv$")
+SOLD_PATTERN = re.compile(r"^CRMLSSold(\d{6})\.csv$")
+FILLED_SOLD_PATTERN = re.compile(r"^CRMLSSold(\d{6})_filled\.csv$")
 
-listing = []
-sold = []
 
-listing_count = []
-sold_count = []
+@dataclass(frozen=True)
+class MonthlyFiles:
+    month: str
+    listing: Path
+    sold: Path
 
-for year in range(START_YEAR, CURR_YEAR + 1):
 
-    for month in range(START_MONTH, END_MONTH + 1):
+def _validate_month_key(value: str) -> None:
+    year = int(value[:4])
+    month = int(value[4:])
+    if year < 1 or not 1 <= month <= 12:
+        raise ValueError(f"Invalid YYYYMM value in raw filename: {value}")
 
-        if year == CURR_YEAR and month > CURR_MONTH:
-            break
 
-        listing_file = RAW_DIR / f"CRMLSListing{year}{month:02d}.csv"
+def discover_monthly_files(raw_dir: Path = RAW_DIR) -> list[MonthlyFiles]:
+    listings: dict[str, Path] = {}
+    sold_files: dict[str, Path] = {}
+    filled_sold_files: dict[str, Path] = {}
 
-        if os.path.exists(listing_file):
-            df_listing = pd.read_csv(listing_file, low_memory=False)
-
-        else:
+    for path in raw_dir.iterdir():
+        if not path.is_file():
             continue
+        for pattern, destination in (
+            (LISTING_PATTERN, listings),
+            (SOLD_PATTERN, sold_files),
+            (FILLED_SOLD_PATTERN, filled_sold_files),
+        ):
+            match = pattern.fullmatch(path.name)
+            if match:
+                month = match.group(1)
+                _validate_month_key(month)
+                destination[month] = path
+                break
 
-        filled_sold_file = RAW_DIR / f"CRMLSSold{year}{month:02d}_filled.csv"
-        
-        if os.path.exists(filled_sold_file):
-            df_sold = pd.read_csv(filled_sold_file, low_memory=False)
-        
-        else:
-            base_sold_file = RAW_DIR / f"CRMLSSold{year}{month:02d}.csv"
-            if os.path.exists(base_sold_file):
-                df_sold = pd.read_csv(base_sold_file, low_memory=False)
+    listing_months = set(listings)
+    sold_months = set(sold_files) | set(filled_sold_files)
+    missing_sold = sorted(listing_months - sold_months)
+    missing_listings = sorted(sold_months - listing_months)
+    if missing_sold or missing_listings:
+        problems = []
+        if missing_sold:
+            problems.append("missing sold files for " + ", ".join(missing_sold))
+        if missing_listings:
+            problems.append(
+                "missing listing files for " + ", ".join(missing_listings)
+            )
+        raise FileNotFoundError(
+            "Incomplete monthly CRMLS data: " + "; ".join(problems)
+        )
+    if not listing_months:
+        raise FileNotFoundError(f"No monthly CRMLS CSV files found in {raw_dir}.")
 
-            else:
-                continue
+    monthly_files = []
+    for month in sorted(listing_months):
+        sold_path = filled_sold_files.get(month) or sold_files[month]
+        monthly_files.append(MonthlyFiles(month, listings[month], sold_path))
+    return monthly_files
 
-        listing.append(df_listing)
-        listing_count.append(df_listing.shape[0])
 
-        sold.append(df_sold)
-        sold_count.append(df_sold.shape[0])
+def combine_monthly_data(
+    raw_dir: Path = RAW_DIR, processed_dir: Path = PROCESSED_DIR
+) -> tuple[int, int]:
+    monthly_files = discover_monthly_files(raw_dir)
+    listing_frames = [
+        pd.read_csv(files.listing, low_memory=False) for files in monthly_files
+    ]
+    sold_frames = [pd.read_csv(files.sold, low_memory=False) for files in monthly_files]
 
-listing_comb = pd.concat(listing, ignore_index=True)
-sold_comb = pd.concat(sold, ignore_index=True)
+    listing_combined = pd.concat(listing_frames, ignore_index=True)
+    sold_combined = pd.concat(sold_frames, ignore_index=True)
+    print(
+        "Rows before Residential filter: "
+        f"{len(listing_combined):,} listings, {len(sold_combined):,} sold."
+    )
 
-print(listing_comb.shape[0], sold_comb.shape[0])
+    for label, frame in (("listing", listing_combined), ("sold", sold_combined)):
+        if "PropertyType" not in frame.columns:
+            raise KeyError(
+                f"{label.title()} data is missing required PropertyType column."
+            )
 
-"""
-Confirmed row counts before filtering:
-- Listings: 967777
-- Sold: 665370
-"""
+    listing_combined = listing_combined[
+        listing_combined["PropertyType"] == "Residential"
+    ]
+    sold_combined = sold_combined[sold_combined["PropertyType"] == "Residential"]
 
-listing_comb = listing_comb[listing_comb["PropertyType"] == "Residential"]
-sold_comb = sold_comb[sold_comb["PropertyType"] == "Residential"]
+    processed_dir.mkdir(parents=True, exist_ok=True)
+    listing_combined.to_csv(processed_dir / "CRMLSListing.csv", index=False)
+    sold_combined.to_csv(processed_dir / "CRMLSSold.csv", index=False)
+    print(
+        "Rows after Residential filter: "
+        f"{len(listing_combined):,} listings, {len(sold_combined):,} sold."
+    )
+    return len(listing_combined), len(sold_combined)
 
-listing_comb.to_csv(os.path.join(PROCESSED_DIR, "CRMLSListing.csv"), index=False)
-sold_comb.to_csv(os.path.join(PROCESSED_DIR, "CRMLSSold.csv"), index=False)
 
-print(listing_comb.shape[0], sold_comb.shape[0])
+def main() -> int:
+    combine_monthly_data()
+    return 0
 
-"""
-Confirmed row counts after filtering for Residential property type:
-- Listings: 616072
-- Sold: 447964
-"""
+
+if __name__ == "__main__":
+    raise SystemExit(main())
