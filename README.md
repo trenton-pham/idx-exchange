@@ -172,4 +172,4 @@ The tests cover extraction retries and token refresh, safe pagination, schema an
 
 ### Santa Clara County Market Report
 
-![Santa Clara Market Report](SantaClaraMarketReport.pdf)
+![Santa Clara Market Report](images/SantaClaraMarketReport.png)
