@@ -6,7 +6,7 @@ CRMLS records and all derived datasets are confidential. The `data/`, `docs/`, a
 
 ## Current Capabilities
 
-- Fetch any inclusive month range from the CoreLogic Trestle WebAPI and save separate listing and sold CSVs.
+- Fetch any inclusive month range from the CoreLogic Trestle Web API and save separate listing and sold CSVs.
 - Resume historical backfills by skipping completed files, or safely refresh files with `--force`.
 - Validate metadata, pagination, record counts, listing-key uniqueness, date boundaries, and closed-sale status before publishing an export.
 - Discover all available monthly listing/sold pairs automatically, including preferred `_filled` sold files, without a hard-coded ending month.
@@ -50,19 +50,21 @@ idx/
 │   ├── feature_engineer.ipynb         # Feature exploration and grouped summaries
 │   ├── outlier.ipynb                  # Outlier and price-ratio investigation
 │   └── modeling.ipynb                 # Sale-price modeling experiment
+├── scripts/
+│   ├── __init__.py                    # Python package marker
+│   ├── extract_crmls.py               # Monthly Trestle extraction
+│   ├── process.py                     # Monthly-file discovery and aggregation
+│   ├── validation.py                  # Missingness analysis and column filtering
+│   ├── mortgage_fetch.py              # FRED mortgage-rate enrichment
+│   ├── clean.py                       # Reusable cleaning and geographic checks
+│   ├── feature_engineer.py            # Sold-record feature engineering
+│   ├── outlier.py                     # Sold-record outlier filtering
+│   └── pipeline.py                    # End-to-end pipeline runner
 ├── tests/
 │   ├── test_clean.py                  # Geographic flagging tests
 │   ├── test_extract_crmls.py          # Extraction, retry, and validation tests
 │   ├── test_pipeline.py               # Pipeline argument and stage-order tests
 │   └── test_process.py                # Monthly discovery and combination tests
-├── extract_crmls.py                   # Monthly Trestle extraction
-├── process.py                         # Monthly-file discovery and aggregation
-├── validation.py                      # Missingness analysis and column filtering
-├── mortgage_fetch.py                  # FRED mortgage-rate enrichment
-├── clean.py                           # Reusable cleaning and geographic checks
-├── feature_engineer.py                # Sold-record feature engineering
-├── outlier.py                         # Sold-record outlier filtering
-├── pipeline.py                        # End-to-end pipeline runner
 └── requirements.txt                   # Pinned core Python dependencies
 ```
 
@@ -76,14 +78,14 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-The core stack is pandas, NumPy, GeoPandas, Shapely, Matplotlib, Statsmodels, and Requests. The installed requirements also include an IPython kernel plus SciPy, scikit-learn, and XGBoost for the modeling notebook.
-
 Because `data/` is not committed, a new local setup must provide these reference files before running the full pipeline:
 
 - `data/zip/california_valid_zip_codes.csv`, with a `ZIP_CODE` column
+    - Download: https://lab.data.ca.gov/dataset/ca-zip-code-boundaries
 - `data/city_boundaries/City_and_County_Boundaries.geojson`, with a `COUNTY_NAME` field and polygon geometry
+    - Download: https://www.californianature.ca.gov/datasets/CAnature::city-and-county-boundaries/about
 
-The stage directories under `data/` must also exist. Raw MLS data can be supplied as local monthly file pairs or fetched with the extractor.
+The project’s ZIP file is a reduced one-column derivative, so retain the ZIP-code column, name it ZIP_CODE, and save it as california_valid_zip_codes.csv. Save the boundary download as City_and_County_Boundaries.geojson.
 
 ## Fetching Monthly CRMLS Data
 
@@ -99,7 +101,7 @@ Shell environment values override `.env`. Do not place endpoint values, access t
 Fetch an inclusive month range:
 
 ```bash
-python extract_crmls.py --start-month 2026-08 --end-month 2026-08
+python scripts/extract_crmls.py --start-month 2026-08 --end-month 2026-08
 ```
 
 Ranges may cross calendar years. Each month produces:
@@ -116,32 +118,32 @@ Existing files are skipped, which makes a long backfill resumable. Use `--force`
 Run the transformations against monthly CSVs already in `data/raw/`:
 
 ```bash
-python pipeline.py
+python scripts/pipeline.py
 ```
 
 Fetch a month range first and then run every transformation stage:
 
 ```bash
-python pipeline.py --fetch-start 2026-08 --fetch-end 2026-08
+python scripts/pipeline.py --fetch-start 2026-08 --fetch-end 2026-08
 ```
 
 Add `--force-fetch` to refresh existing monthly exports. Both fetch dates are required together, and the end month cannot be earlier than the start month.
 
-`process.py` requires a listing and sold file for every discovered month and fails clearly when a pair is incomplete. When both `CRMLSSoldYYYYMM.csv` and `CRMLSSoldYYYYMM_filled.csv` exist, the `_filled` file is used.
+`scripts/process.py` requires a listing and sold file for every discovered month and fails clearly when a pair is incomplete. When both `CRMLSSoldYYYYMM.csv` and `CRMLSSoldYYYYMM_filled.csv` exist, the `_filled` file is used.
 
-The legacy `--with-reports` option still references `distribution.py`, which is not included in the current checkout. Run the pipeline without that flag unless the report script is restored.
+The legacy `--with-reports` option still references `scripts/distribution.py`, which is not included in the current checkout. Run the pipeline without that flag unless the report script is restored.
 
 ## Transformation Details
 
 | Stage | Script | Work performed | Main output |
 | --- | --- | --- | --- |
-| Extract | `extract_crmls.py` | Authenticates, checks the Trestle schema, follows pagination, validates records, and writes monthly exports. | `data/raw/CRMLSListingYYYYMM.csv`, `data/raw/CRMLSSoldYYYYMM.csv` |
-| Process | `process.py` | Discovers complete month pairs, prefers filled sold files, combines all months, and keeps `PropertyType == "Residential"`. | `data/processed/CRMLSListing.csv`, `data/processed/CRMLSSold.csv` |
-| Validate | `validation.py` | Profiles missingness and key sold distributions, then removes columns with more than 90% missing values. | `data/filtered/CRMLSListing_filtered.csv`, `data/filtered/CRMLSSold_filtered.csv` |
-| Enrich | `mortgage_fetch.py` | Converts weekly FRED `MORTGAGE30US` observations to monthly averages and joins them by listing or close month. | `data/mortgage/*_with_mortgage.csv` |
-| Clean | `clean.py` | Parses dates, flags timeline and numeric issues, normalizes names, filters state/ZIP values, checks coordinates against county polygons, removes redundant fields, and applies known data corrections. | `data/cleaned/CRMLSListing_cleaned.csv`, `data/cleaned/CRMLSSold_cleaned.csv` |
-| Engineer | `feature_engineer.py` | Adds price ratios, price per square foot, close year/month, year-month labels, and listing-to-contract and contract-to-close durations. | `data/feature_engineer/CRMLSSold_feature_engineered.csv` |
-| Filter | `outlier.py` | Applies a three-IQR `ClosePrice` boundary and keeps close-to-original-list ratios from 0.75 through 1.50. | `data/post_outlier/CRMLSSold_cleaned_out.csv` |
+| Extract | `scripts/extract_crmls.py` | Authenticates, checks the Trestle schema, follows pagination, validates records, and writes monthly exports. | `data/raw/CRMLSListingYYYYMM.csv`, `data/raw/CRMLSSoldYYYYMM.csv` |
+| Process | `scripts/process.py` | Discovers complete month pairs, prefers filled sold files, combines all months, and keeps `PropertyType == "Residential"`. | `data/processed/CRMLSListing.csv`, `data/processed/CRMLSSold.csv` |
+| Validate | `scripts/validation.py` | Profiles missingness and key sold distributions, then removes columns with more than 90% missing values. | `data/filtered/CRMLSListing_filtered.csv`, `data/filtered/CRMLSSold_filtered.csv` |
+| Enrich | `scripts/mortgage_fetch.py` | Converts weekly FRED `MORTGAGE30US` observations to monthly averages and joins them by listing or close month. | `data/mortgage/*_with_mortgage.csv` |
+| Clean | `scripts/clean.py` | Parses dates, flags timeline and numeric issues, normalizes names, filters state/ZIP values, checks coordinates against county polygons, removes redundant fields, and applies known data corrections. | `data/cleaned/CRMLSListing_cleaned.csv`, `data/cleaned/CRMLSSold_cleaned.csv` |
+| Engineer | `scripts/feature_engineer.py` | Adds price ratios, price per square foot, close year/month, year-month labels, and listing-to-contract and contract-to-close durations. | `data/feature_engineer/CRMLSSold_feature_engineered.csv` |
+| Filter | `scripts/outlier.py` | Applies a three-IQR `ClosePrice` boundary and keeps close-to-original-list ratios from 0.75 through 1.50. | `data/post_outlier/CRMLSSold_cleaned_out.csv` |
 
 ## Analysis Work Completed
 
@@ -161,6 +163,13 @@ python -m unittest discover -s tests -v
 
 The tests cover extraction retries and token refresh, safe pagination, schema and record validation, resumable/atomic exports, month-pair discovery, residential filtering, pipeline arguments, and county-coordinate matching.
 
+## Final Deliverables
+
 ### Tableau Visualizations
+
 - Market Analysis: https://public.tableau.com/views/CaliforniaRealEstateMarketAnalysis_17882190871160/MarketAnalysis?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link
 - Competitive Analysis: https://public.tableau.com/views/CaliforniaRealEstateCompetitiveAnalysis_17882211560250/CompetitiveAnalysisDashboard?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link
+
+### Santa Clara County Market Report
+
+![Santa Clara Market Report](SantaClaraMarketReport.pdf)

@@ -7,12 +7,13 @@ import numpy as np
 import pandas as pd
 
 
-LISTING_PATH = Path("data/mortgage/CRMLSListing_with_mortgage.csv")
-SOLD_PATH = Path("data/mortgage/CRMLSSold_with_mortgage.csv")
-OUTPUT_DIR = Path("data/cleaned")
-ZIP_CODE_PATH = Path("data/zip/california_valid_zip_codes.csv")
-COUNTY_BOUNDARY_PATH = Path(
-    "data/city_boundaries/City_and_County_Boundaries.geojson"
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+LISTING_PATH = PROJECT_DIR / "data" / "mortgage" / "CRMLSListing_with_mortgage.csv"
+SOLD_PATH = PROJECT_DIR / "data" / "mortgage" / "CRMLSSold_with_mortgage.csv"
+OUTPUT_DIR = PROJECT_DIR / "data" / "cleaned"
+ZIP_CODE_PATH = PROJECT_DIR / "data" / "zip" / "california_valid_zip_codes.csv"
+COUNTY_BOUNDARY_PATH = (
+    PROJECT_DIR / "data" / "city_boundaries" / "City_and_County_Boundaries.geojson"
 )
 GEOGRAPHIC_CRS = "EPSG:4326"
 

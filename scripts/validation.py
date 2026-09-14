@@ -3,8 +3,9 @@ from statsmodels.stats.descriptivestats import Description
 from pathlib import Path
 import os
 
-PROCESSED_DIR = Path("data/processed/")
-FILTERED_DIR = Path("data/filtered/")
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+PROCESSED_DIR = PROJECT_DIR / "data" / "processed"
+FILTERED_DIR = PROJECT_DIR / "data" / "filtered"
 
 def unique_property_types(data):
     return data["PropertyType"].unique()

@@ -1,8 +1,16 @@
 from __future__ import annotations
 
+import sys
 import unittest
+from unittest import mock
 
-from pipeline import get_stages, parse_args
+from scripts.pipeline import (
+    PROJECT_DIR,
+    SCRIPTS_DIR,
+    get_stages,
+    parse_args,
+    run_pipeline,
+)
 
 
 class PipelineTests(unittest.TestCase):
@@ -33,6 +41,17 @@ class PipelineTests(unittest.TestCase):
     def test_force_requires_fetch_range(self):
         with self.assertRaises(SystemExit):
             parse_args(["--force-fetch"])
+
+    def test_pipeline_runs_scripts_from_scripts_directory_at_project_root(self):
+        with mock.patch("scripts.pipeline.subprocess.run") as subprocess_run:
+            result = run_pipeline([("Combine monthly data", ["process.py"])])
+
+        self.assertEqual(result, 0)
+        subprocess_run.assert_called_once_with(
+            [sys.executable, str(SCRIPTS_DIR / "process.py")],
+            cwd=PROJECT_DIR,
+            check=True,
+        )
 
 
 if __name__ == "__main__":

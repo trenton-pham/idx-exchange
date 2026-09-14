@@ -9,7 +9,8 @@ import time
 from pathlib import Path
 
 
-PROJECT_DIR = Path(__file__).resolve().parent
+SCRIPTS_DIR = Path(__file__).resolve().parent
+PROJECT_DIR = SCRIPTS_DIR.parent
 
 CORE_STAGES = [
     ("Combine monthly data", ["process.py"]),
@@ -109,7 +110,7 @@ def run_pipeline(stages: list[tuple[str, list[str]]]) -> int:
         stage_started = time.perf_counter()
 
         subprocess.run(
-            [sys.executable, str(PROJECT_DIR / script_name), *command[1:]],
+            [sys.executable, str(SCRIPTS_DIR / script_name), *command[1:]],
             cwd=PROJECT_DIR,
             check=True,
         )

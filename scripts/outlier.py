@@ -1,6 +1,9 @@
+from pathlib import Path
+
 import pandas as pd
 
-sold_path = "data/feature_engineer/CRMLSSold_feature_engineered.csv"
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+sold_path = PROJECT_DIR / "data" / "feature_engineer" / "CRMLSSold_feature_engineered.csv"
 df = pd.read_csv(sold_path, low_memory=False)
 
 Q1 = df['ClosePrice'].quantile(0.25) 
@@ -24,4 +27,7 @@ print(df["ClosePrice"].loc[df["ListingId"] == "P1-17580"])
 print(df["OriginalListPrice"].loc[df["ListingId"] == "PI24198548"])
 print(df["OriginalListPrice"].loc[df["ListingId"] == "OC24065101"])
 
-df.to_csv("data/post_outlier/CRMLSSold_cleaned_out.csv", index=False)       
+df.to_csv(
+    PROJECT_DIR / "data" / "post_outlier" / "CRMLSSold_cleaned_out.csv",
+    index=False,
+)

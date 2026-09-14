@@ -10,7 +10,7 @@ from unittest import mock
 
 import requests
 
-from extract_crmls import (
+from scripts.extract_crmls import (
     ExtractionError,
     LISTING_SPEC,
     PROPERTY_FIELDS,

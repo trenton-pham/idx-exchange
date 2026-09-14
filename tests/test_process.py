@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from process import combine_monthly_data, discover_monthly_files
+from scripts.process import combine_monthly_data, discover_monthly_files
 
 
 def write_csv(path: Path, rows: list[dict[str, str]]) -> None:

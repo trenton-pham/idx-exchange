@@ -7,7 +7,7 @@ import pandas as pd
 from pandas.api.types import is_bool_dtype
 from shapely.geometry import box
 
-from clean import flag_coordinates
+from scripts.clean import flag_coordinates
 
 
 class CoordinateFlagTests(unittest.TestCase):

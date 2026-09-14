@@ -20,7 +20,8 @@ from uuid import uuid4
 import requests
 
 
-PROJECT_DIR = Path(__file__).resolve().parent
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_DIR = SCRIPT_DIR.parent
 RAW_DIR = PROJECT_DIR / "data" / "raw"
 ENV_PATH = PROJECT_DIR / ".env"
 
