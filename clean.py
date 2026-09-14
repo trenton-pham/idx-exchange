@@ -5,6 +5,7 @@ from pathlib import Path
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+import shapely
 
 
 LISTING_PATH = Path("data/mortgage/CRMLSListing_with_mortgage.csv")
@@ -37,7 +38,7 @@ def list_agent_drop(df):
     return df
 
 
-def filter_zip_codes(df, valid_zip_codes):
+def filter_zip_codes(df, valid_zip_codes, *, retain_unmapped=False):
     postal_code = df["PostalCode"].astype("string").str.strip()
 
     # Handles 12345 and 12345-6789.
@@ -47,7 +48,10 @@ def filter_zip_codes(df, valid_zip_codes):
     )
 
     valid = zip5.isin(valid_zip_codes)
-
+    if retain_unmapped:
+        df = df.copy()
+        df["PostalCode"] = zip5.where(valid)
+        return df
     df = df.loc[valid].copy()
     df["PostalCode"] = zip5.loc[valid]
     return df
@@ -113,48 +117,75 @@ def flag_coordinates(df, county_boundaries):
 
     if valid_coordinates.any():
         valid_positions = np.flatnonzero(valid_coordinates.to_numpy())
-        points = gpd.GeoDataFrame(
-            {"_row_id": valid_positions},
-            geometry=gpd.points_from_xy(
-                longitude.iloc[valid_positions],
-                latitude.iloc[valid_positions],
-            ),
-            crs=GEOGRAPHIC_CRS,
+        points = shapely.points(
+            longitude.iloc[valid_positions].to_numpy(),
+            latitude.iloc[valid_positions].to_numpy(),
         )
 
-        joined = gpd.sjoin(
-            points,
-            county_boundaries[["COUNTY_NAME", "geometry"]],
-            how="left",
-            predicate="intersects",
+        boundary_names = normalize_geographic_names(
+            county_boundaries["COUNTY_NAME"]
         )
+        geometries_by_county = {}
+        all_geometries = []
+        for county_name, geometry in zip(
+            boundary_names, county_boundaries.geometry
+        ):
+            if pd.isna(county_name) or geometry is None or geometry.is_empty:
+                continue
+            geometries_by_county.setdefault(county_name, []).append(geometry)
+            all_geometries.append(geometry)
 
-        reported_counties = normalize_geographic_names(result["CountyOrParish"])
-        expected_counties = reported_counties.iloc[
-            joined["_row_id"].to_numpy()
-        ].reset_index(drop=True)
-        matched_counties = normalize_geographic_names(
-            joined["COUNTY_NAME"]
-        ).reset_index(drop=True)
+        if all_geometries:
+            county_names = list(geometries_by_county)
+            county_geometries = np.empty(len(county_names), dtype=object)
+            for position, county_name in enumerate(county_names):
+                geometries = geometries_by_county[county_name]
+                county_geometries[position] = (
+                    geometries[0]
+                    if len(geometries) == 1
+                    else shapely.union_all(geometries)
+                )
 
-        joined["_inside_california"] = joined["index_right"].notna()
-        joined["_county_match"] = (
-            expected_counties.eq(matched_counties).fillna(False).to_numpy()
-        )
+            # Preparing each county makes the repeated point-in-polygon checks
+            # substantially faster than joining every point against every county.
+            shapely.prepare(county_geometries)
+            county_lookup = {
+                county_name: position
+                for position, county_name in enumerate(county_names)
+            }
+            reported_counties = normalize_geographic_names(
+                result["CountyOrParish"]
+            ).iloc[valid_positions]
+            expected_county_positions = (
+                reported_counties.map(county_lookup)
+                .fillna(-1)
+                .to_numpy(dtype=np.int64)
+            )
 
-        # A point on a shared border can intersect two counties. Any match to the
-        # reported county is sufficient and the source row must remain singular.
-        coordinate_matches = joined.groupby("_row_id", sort=False).agg(
-            _inside_california=("_inside_california", "any"),
-            _county_match=("_county_match", "any"),
-        )
-        matched_positions = coordinate_matches.index.to_numpy(dtype=int)
-        coordinates_in_california[matched_positions] = coordinate_matches[
-            "_inside_california"
-        ].to_numpy(dtype=bool)
-        coordinates_outside_county[matched_positions] = ~coordinate_matches[
-            "_county_match"
-        ].to_numpy(dtype=bool)
+            county_matches = np.zeros(len(valid_positions), dtype=bool)
+            known_counties = expected_county_positions >= 0
+            county_matches[known_counties] = shapely.intersects(
+                county_geometries[expected_county_positions[known_counties]],
+                points[known_counties],
+            )
+
+            coordinates_in_california[valid_positions[county_matches]] = True
+            coordinates_outside_county[valid_positions] = ~county_matches
+
+            # A county match proves that the point is in California. Only query
+            # all county polygons for the small set of mismatches, which still
+            # distinguishes an incorrect county from a point outside the state.
+            fallback_positions = np.flatnonzero(~county_matches)
+            if fallback_positions.size:
+                boundary_tree = shapely.STRtree(np.asarray(all_geometries))
+                fallback_pairs = boundary_tree.query(
+                    points[fallback_positions], predicate="intersects"
+                )
+                if fallback_pairs.shape[1]:
+                    fallback_inside = np.unique(fallback_pairs[0])
+                    coordinates_in_california[
+                        valid_positions[fallback_positions[fallback_inside]]
+                    ] = True
 
     result["coordinates_in_california"] = coordinates_in_california
     result["coordinates_outside_county_flag"] = coordinates_outside_county
@@ -168,9 +199,9 @@ def flag_nono_values(df, columns):
     return df
 
 
-def main():
-    listing = pd.read_csv(LISTING_PATH, low_memory=False)
-    sold = pd.read_csv(SOLD_PATH, low_memory=False)
+def clean_frames(listing, sold, *, zip_path=ZIP_CODE_PATH, county_path=COUNTY_BOUNDARY_PATH, retain_unmapped_zip=False):
+    listing = listing.copy()
+    sold = sold.copy()
 
     listing = clean_duplicate_columns(listing)
 
@@ -216,12 +247,12 @@ def main():
 
     valid_zip_codes = set(
         pd.read_csv(
-            ZIP_CODE_PATH,
+            zip_path,
             dtype={"ZIP_CODE": "string"},
         )["ZIP_CODE"]
     )
-    listing = filter_zip_codes(listing, valid_zip_codes)
-    sold = filter_zip_codes(sold, valid_zip_codes)
+    listing = filter_zip_codes(listing, valid_zip_codes, retain_unmapped=retain_unmapped_zip)
+    sold = filter_zip_codes(sold, valid_zip_codes, retain_unmapped=retain_unmapped_zip)
 
     listing["City"] = listing["City"].fillna("Unknown")
     sold["City"] = sold["City"].fillna("Unknown")
@@ -229,7 +260,7 @@ def main():
     listing["PropertySubType"] = listing["PropertySubType"].fillna("Unknown")
     sold["PropertySubType"] = sold["PropertySubType"].fillna("Unknown")
 
-    county_boundaries = load_county_boundaries()
+    county_boundaries = load_county_boundaries(county_path)
     listing = flag_coordinates(listing, county_boundaries)
     sold = flag_coordinates(sold, county_boundaries)
 
@@ -266,16 +297,14 @@ def main():
     Dropping redundant columns
     - PropertyType: Assumed to be `Residential`
     - MlsStatus and StandardStatus: Constant `Closed` values
-    - ListingKey: Redundant with `ListingKeyNumeric`
+    Authoritative ListingKey is retained for production revision resolution.
     """
     sold.drop(
         columns=[
             "PropertyType",
             "MlsStatus",
             "StandardStatus",
-            "ListingKey",
             "BuyerAgencyCompensationType",
-            "OriginatingSystemName",
             "OriginatingSystemSubName",
             "AttachedGarageYN",
             "FireplaceYN",
@@ -308,6 +337,12 @@ def main():
         sold.loc[match, "OriginalListPrice"] = value
         sold.loc[match, "ListPrice"] = value
 
+    return listing, sold
+
+
+def main():
+    listing, sold = clean_frames(pd.read_csv(LISTING_PATH, low_memory=False), pd.read_csv(SOLD_PATH, low_memory=False))
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     listing.to_csv(OUTPUT_DIR / "CRMLSListing_cleaned.csv", index=False)
     sold.to_csv(OUTPUT_DIR / "CRMLSSold_cleaned.csv", index=False)
 

@@ -1,0 +1,4 @@
+-r requirements-production.lock.txt
+httpx>=0.28,<1
+PyYAML>=6,<7
+cfn-lint>=1,<2

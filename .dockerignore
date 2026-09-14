@@ -1,0 +1,12 @@
+.git
+.env*
+.venv
+data
+docs
+output
+tmp
+notebooks
+web/node_modules
+web/dist
+__pycache__
+.impeccable

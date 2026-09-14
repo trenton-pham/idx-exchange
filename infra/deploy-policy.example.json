@@ -1,0 +1,12 @@
+{
+  "purpose": "Administrator worksheet: replace each resource description with exact ARNs and construct scoped IAM statements before attaching. This is not an IAM policy.",
+  "groups": [
+    {"resources": "housing-foundation read-only and housing-app CloudFormation stack/change sets", "actions": ["cloudformation:Describe*", "cloudformation:GetTemplate*", "cloudformation:CreateChangeSet", "cloudformation:ExecuteChangeSet", "cloudformation:DeleteChangeSet"]},
+    {"resources": "Dedicated SAM artifact bucket and web bucket only", "actions": ["s3:ListBucket", "s3:GetBucketLocation", "s3:GetObject", "s3:PutObject"]},
+    {"resources": "Foundation ECR repository only (GetAuthorizationToken requires *)", "actions": ["ecr:GetAuthorizationToken", "ecr:DescribeImages", "ecr:BatchCheckLayerAvailability", "ecr:InitiateLayerUpload", "ecr:UploadLayerPart", "ecr:CompleteLayerUpload", "ecr:PutImage"]},
+    {"resources": "Application CloudFront distribution only", "actions": ["cloudfront:CreateInvalidation"]},
+    {"resources": "Application CloudFormation service role only, if used", "actions": ["iam:PassRole"]}
+  ],
+  "execution_role": "CloudFormation also needs service permissions to manage the resources declared in application.yaml, including tightly scoped IAM creation/passing of application roles and secret reads. Have your account administrator define its permission boundary. Do not grant these permissions to pull-request jobs.",
+  "bootstrap": "The first SAM --resolve-s3 deployment may create its managed artifact bucket/stack. Bootstrap that locally or provide a dedicated artifact bucket, then restrict CI to it."
+}

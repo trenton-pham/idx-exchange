@@ -1,27 +1,14 @@
+"""Historical three-IQR and 0.75–1.50 price-ratio policy."""
+from pathlib import Path
 import pandas as pd
 
-sold_path = "data/feature_engineer/CRMLSSold_feature_engineered.csv"
-df = pd.read_csv(sold_path, low_memory=False)
+def filter_outliers(frame):
+    q1,q3=frame["ClosePrice"].quantile([0.25,0.75]); iqr=q3-q1
+    return frame.loc[frame["ClosePrice"].between(q1-3*iqr,q3+3*iqr)&frame["CloseToOriginalListRatio"].between(0.75,1.5)].copy()
 
-Q1 = df['ClosePrice'].quantile(0.25) 
-Q3 = df['ClosePrice'].quantile(0.75) 
-IQR = Q3 - Q1 
-lower = Q1 - 3.0 * IQR 
-upper = Q3 + 3.0 * IQR 
-df = df[(df['ClosePrice'] >= lower) & (df['ClosePrice'] <= upper)]
+def main():
+    target=Path("data/post_outlier/CRMLSSold_cleaned_out.csv")
+    target.parent.mkdir(parents=True,exist_ok=True)
+    filter_outliers(pd.read_csv("data/feature_engineer/CRMLSSold_feature_engineered.csv",low_memory=False)).to_csv(target,index=False)
 
-df = df[df["CloseToOriginalListRatio"] <= 1.5]
-df = df[df["CloseToOriginalListRatio"] >= 0.75]
-
-# confirm changed ClosePrice
-print(df["ClosePrice"].loc[df["ListingId"] == "219137367DA"])
-print(df["ClosePrice"].loc[df["ListingId"] == "224002893"])
-print(df["ClosePrice"].loc[df["ListingId"] == "219113154PS"])
-print(df["ClosePrice"].loc[df["ListingId"] == "V1-31998"])
-print(df["ClosePrice"].loc[df["ListingId"] == "219134383PS"])
-print(df["ClosePrice"].loc[df["ListingId"] == "P1-17580"])
-
-print(df["OriginalListPrice"].loc[df["ListingId"] == "PI24198548"])
-print(df["OriginalListPrice"].loc[df["ListingId"] == "OC24065101"])
-
-df.to_csv("data/post_outlier/CRMLSSold_cleaned_out.csv", index=False)       
+if __name__=="__main__": main()

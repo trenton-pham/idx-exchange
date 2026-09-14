@@ -2,7 +2,19 @@
 
 This project turns monthly California Regional Multiple Listing Service (CRMLS) listing and closed-sale exports into analysis-ready datasets for market, competitive, and predictive analysis. The workflow supports resumable Trestle API extraction, residential-property filtering, data-quality validation, mortgage-rate enrichment, geographic cleaning, feature engineering, outlier filtering, Tableau dashboards, and exploratory sale-price modeling.
 
-CRMLS records and all derived datasets are confidential. The `data/`, `docs/`, and local environment files are intentionally ignored by Git.
+Source CRMLS records, property details and intermediate datasets remain private. The web application exposes only the approved public aggregates and listing-side named rankings. The `data/`, `docs/`, and local environment files are intentionally ignored by Git.
+
+## Web dashboard
+
+The React dashboard couples a California county/ZIP-area map with a selected-market summary, Market Trends and Competitive Analysis. A read-only Python API queries PostgreSQL using shared URL filters and a pinned publication version.
+
+Scheduled ingestion runs on the **7th of each month at 06:00 America/Los_Angeles**. It refreshes source history from January 2024 through the last completed month, archives raw exports privately in S3, and atomically publishes a rolling maximum of **36 completed months** to RDS. Failed publications preserve the current dataset.
+
+- [Local development, AWS setup, CI/CD and operations](SETUP.md)
+- [Metric definitions, privacy, retention and Tableau reconciliation](ANALYTICS.md)
+- [Interface design system](DESIGN.md)
+
+Start with the synthetic local preview in the setup guide. AWS provisioning and real-feed reconciliation are separate deployment steps. The legacy CSV and notebook workflow described below remains available.
 
 ## Current Capabilities
 

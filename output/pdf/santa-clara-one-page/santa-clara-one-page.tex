@@ -1,0 +1,80 @@
+% Compile with pdfLaTeX, XeLaTeX, or Tectonic.
+% Keep the assets/ folder beside this file. All six embedded screenshots
+% are extracted directly from the supplied PDF, without resampling.
+% Original wording is preserved, including grammatical inconsistencies.
+% A custom 20 x 11.5 inch page keeps the complete report on one page.
+\documentclass[11pt]{article}
+\usepackage[paperwidth=20in,paperheight=11.5in,margin=0.5in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{microtype}
+\pagestyle{empty}
+\renewcommand{\familydefault}{\sfdefault}
+\definecolor{ink}{HTML}{203447}
+\definecolor{rulecolor}{HTML}{CBD4DA}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{7pt}
+\setlength{\emergencystretch}{2em}
+\graphicspath{{assets/}}
+\newcommand{\reportsection}[1]{%
+  \par
+  {\color{ink}\fontsize{15}{18}\selectfont\bfseries #1\par}%
+  \vspace{1pt}{\color{rulecolor}\hrule height 0.6pt}\vspace{8pt}}
+\newcommand{\chart}[1]{\par\noindent\includegraphics[width=\linewidth]{#1}\par}
+\newlength{\reportcol}
+\setlength{\reportcol}{\dimexpr(\textwidth-36pt)/3\relax}
+
+\begin{document}
+\fontsize{11.5}{15}\selectfont
+{\color{ink}\fontsize{29}{34}\selectfont\bfseries Santa Clara Market Overview\par}
+\vspace{7pt}
+{\color{ink}\hrule height 1.2pt}
+\vspace{15pt}
+
+\noindent
+\begin{minipage}[t]{\reportcol}
+\reportsection{Market Overview \& Pricing Trends:}
+Median closing prices follow a seasonal trend, generally reaching their lowest during the winter and their highest during the spring.
+
+\chart{median-close-price.png}
+\vspace{10pt}
+This is also reflected by the monthly average days on market, with the longest average occurring during the winter, and the lowest average occurring during the spring; however, average days on market have increased in 2025, and again in 2026, possibly signaling weaker demand for homes in Santa Clara.
+
+\chart{average-days-on-market.png}
+
+This pattern may help explain the subtle downtrend of peak and lowest closing prices per year, first occurring in 2025 and again in 2026.
+\vspace{15pt}
+\reportsection{Key Takeaways:}
+\begin{itemize}[leftmargin=13pt,itemsep=7pt,topsep=0pt,label=\textbullet]
+\item Median closing price and average days on market follows seasonal trends, but has shown subtle shifts year-by-year with lower closing prices and longer days on market.
+\item Starting in July 2025, buyers started purchasing homes at approximately its original listing price.
+\item Housing demand is going down while entering listings remain similar, resulting in a wider selection for buyers.
+\item Andy Tse, David Lillo, Xiaozhu Kang, and Sophie Shen are the dominant listing agents, having sold significantly more properties and have the highest sales volume than any other agents.
+\end{itemize}
+\end{minipage}\hspace{18pt}%
+\begin{minipage}[t]{\reportcol}
+\reportsection{Market Activity:}
+Closing prices relative to the listing price have been on a downward trajectory since its peak in April 2024, where in July 2025, listings started to close in the same resulting price as the original listing price. This trends continuing onto 2026, but homes, relative to its original listing price, are not being sold as high as 2024 and 2025.
+
+\chart{close-to-original-price-ratio.png}
+\vspace{10pt}
+Since Santa Clara's peak in May 2024, closed sales reached its lowest in January 2026. Since then, the market has slowly recovered, doubling its closed sales with a current yearly peak of 528 in June 2026. Yet, the number of new listings per month has remained relatively similar, peaking during May in 2024, 2025, and 2026. The widened gap between incoming supply and completed sales suggests a wider selection of properties for buyers, but greater competition among sellers.
+
+\chart{new-listings-and-closed-sales.png}
+\vspace{10pt}
+\end{minipage}\hspace{18pt}%
+\begin{minipage}[t]{\reportcol}
+\reportsection{Competitive Landscape:}
+The competitive landscape remains clear, with Andy Tse as the top-ranked individual agent in both properties sold and sales volume by far. David Lillo, Xiaozhu Kang, and Sophie Shen rank second through fourth in both measures, with each selling more than 80 additional properties compared to the fifth-ranked agent by properties sold.
+
+\chart{top-list-agents.png}
+\vspace{10pt}
+Among offices, Compass, Coldwell Banker Realty, and Intero Real Estate Services hold the top three by dominating the market in both properties sold and sales volume. The concentration at the top in both agents and offices suggests that listing access, brand reach, and productivity remain important competitive advantages.
+
+\chart{top-list-offices.png}
+\end{minipage}
+
+\end{document}

@@ -1,0 +1,426 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-10T19:03:15.469816+00:00",
+  "title": "Design System: California Housing Market Analysis",
+  "extensions": {
+    "colorMeta": {
+      "navy": {
+        "role": "primary",
+        "displayName": "Navy",
+        "tonalRamp": [
+          "oklch(15% 0.0724 247.74)",
+          "oklch(26% 0.0724 247.74)",
+          "oklch(38% 0.0724 247.74)",
+          "oklch(49% 0.0724 247.74)",
+          "oklch(61% 0.0724 247.74)",
+          "oklch(72% 0.0724 247.74)",
+          "oklch(84% 0.0724 247.74)",
+          "oklch(95% 0.0724 247.74)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0489 244.21)",
+          "oklch(26% 0.0489 244.21)",
+          "oklch(38% 0.0489 244.21)",
+          "oklch(49% 0.0489 244.21)",
+          "oklch(61% 0.0489 244.21)",
+          "oklch(72% 0.0489 244.21)",
+          "oklch(84% 0.0489 244.21)",
+          "oklch(95% 0.0489 244.21)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "tonalRamp": [
+          "oklch(15% 0.0408 243.58)",
+          "oklch(26% 0.0408 243.58)",
+          "oklch(38% 0.0408 243.58)",
+          "oklch(49% 0.0408 243.58)",
+          "oklch(61% 0.0408 243.58)",
+          "oklch(72% 0.0408 243.58)",
+          "oklch(84% 0.0408 243.58)",
+          "oklch(95% 0.0408 243.58)"
+        ]
+      },
+      "page": {
+        "role": "neutral",
+        "displayName": "Page",
+        "tonalRamp": [
+          "oklch(15% 0.0034 247.86)",
+          "oklch(26% 0.0034 247.86)",
+          "oklch(38% 0.0034 247.86)",
+          "oklch(49% 0.0034 247.86)",
+          "oklch(61% 0.0034 247.86)",
+          "oklch(72% 0.0034 247.86)",
+          "oklch(84% 0.0034 247.86)",
+          "oklch(95% 0.0034 247.86)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "tonalRamp": [
+          "oklch(15% 0.0000 89.88)",
+          "oklch(26% 0.0000 89.88)",
+          "oklch(38% 0.0000 89.88)",
+          "oklch(49% 0.0000 89.88)",
+          "oklch(61% 0.0000 89.88)",
+          "oklch(72% 0.0000 89.88)",
+          "oklch(84% 0.0000 89.88)",
+          "oklch(95% 0.0000 89.88)"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Border",
+        "tonalRamp": [
+          "oklch(15% 0.0129 244.26)",
+          "oklch(26% 0.0129 244.26)",
+          "oklch(38% 0.0129 244.26)",
+          "oklch(49% 0.0129 244.26)",
+          "oklch(61% 0.0129 244.26)",
+          "oklch(72% 0.0129 244.26)",
+          "oklch(84% 0.0129 244.26)",
+          "oklch(95% 0.0129 244.26)"
+        ]
+      },
+      "map-field": {
+        "role": "neutral",
+        "displayName": "Map Field",
+        "tonalRamp": [
+          "oklch(15% 0.0076 228.85)",
+          "oklch(26% 0.0076 228.85)",
+          "oklch(38% 0.0076 228.85)",
+          "oklch(49% 0.0076 228.85)",
+          "oklch(61% 0.0076 228.85)",
+          "oklch(72% 0.0076 228.85)",
+          "oklch(84% 0.0076 228.85)",
+          "oklch(95% 0.0076 228.85)"
+        ]
+      },
+      "focus": {
+        "role": "primary",
+        "displayName": "Focus",
+        "tonalRamp": [
+          "oklch(15% 0.1338 49.00)",
+          "oklch(26% 0.1338 49.00)",
+          "oklch(38% 0.1338 49.00)",
+          "oklch(49% 0.1338 49.00)",
+          "oklch(61% 0.1338 49.00)",
+          "oklch(72% 0.1338 49.00)",
+          "oklch(84% 0.1338 49.00)",
+          "oklch(95% 0.1338 49.00)"
+        ]
+      },
+      "selected": {
+        "role": "neutral",
+        "displayName": "Selected",
+        "tonalRamp": [
+          "oklch(15% 0.0101 238.51)",
+          "oklch(26% 0.0101 238.51)",
+          "oklch(38% 0.0101 238.51)",
+          "oklch(49% 0.0101 238.51)",
+          "oklch(61% 0.0101 238.51)",
+          "oklch(72% 0.0101 238.51)",
+          "oklch(84% 0.0101 238.51)",
+          "oklch(95% 0.0101 238.51)"
+        ]
+      },
+      "hover": {
+        "role": "neutral",
+        "displayName": "Hover",
+        "tonalRamp": [
+          "oklch(15% 0.0076 241.66)",
+          "oklch(26% 0.0076 241.66)",
+          "oklch(38% 0.0076 241.66)",
+          "oklch(49% 0.0076 241.66)",
+          "oklch(61% 0.0076 241.66)",
+          "oklch(72% 0.0076 241.66)",
+          "oklch(84% 0.0076 241.66)",
+          "oklch(95% 0.0076 241.66)"
+        ]
+      },
+      "price": {
+        "role": "secondary",
+        "displayName": "Price",
+        "tonalRamp": [
+          "oklch(15% 0.1285 51.42)",
+          "oklch(26% 0.1285 51.42)",
+          "oklch(38% 0.1285 51.42)",
+          "oklch(49% 0.1285 51.42)",
+          "oklch(61% 0.1285 51.42)",
+          "oklch(72% 0.1285 51.42)",
+          "oklch(84% 0.1285 51.42)",
+          "oklch(95% 0.1285 51.42)"
+        ]
+      },
+      "sales": {
+        "role": "secondary",
+        "displayName": "Sales",
+        "tonalRamp": [
+          "oklch(15% 0.0833 201.45)",
+          "oklch(26% 0.0833 201.45)",
+          "oklch(38% 0.0833 201.45)",
+          "oklch(49% 0.0833 201.45)",
+          "oklch(61% 0.0833 201.45)",
+          "oklch(72% 0.0833 201.45)",
+          "oklch(84% 0.0833 201.45)",
+          "oklch(95% 0.0833 201.45)"
+        ]
+      },
+      "listings": {
+        "role": "secondary",
+        "displayName": "Listings",
+        "tonalRamp": [
+          "oklch(15% 0.0978 142.95)",
+          "oklch(26% 0.0978 142.95)",
+          "oklch(38% 0.0978 142.95)",
+          "oklch(49% 0.0978 142.95)",
+          "oklch(61% 0.0978 142.95)",
+          "oklch(72% 0.0978 142.95)",
+          "oklch(84% 0.0978 142.95)",
+          "oklch(95% 0.0978 142.95)"
+        ]
+      },
+      "rate-agent": {
+        "role": "secondary",
+        "displayName": "Rate Agent",
+        "tonalRamp": [
+          "oklch(15% 0.0946 250.30)",
+          "oklch(26% 0.0946 250.30)",
+          "oklch(38% 0.0946 250.30)",
+          "oklch(49% 0.0946 250.30)",
+          "oklch(61% 0.0946 250.30)",
+          "oklch(72% 0.0946 250.30)",
+          "oklch(84% 0.0946 250.30)",
+          "oklch(95% 0.0946 250.30)"
+        ]
+      },
+      "price-area": {
+        "role": "secondary",
+        "displayName": "Price Area",
+        "tonalRamp": [
+          "oklch(15% 0.0570 56.91)",
+          "oklch(26% 0.0570 56.91)",
+          "oklch(38% 0.0570 56.91)",
+          "oklch(49% 0.0570 56.91)",
+          "oklch(61% 0.0570 56.91)",
+          "oklch(72% 0.0570 56.91)",
+          "oklch(84% 0.0570 56.91)",
+          "oklch(95% 0.0570 56.91)"
+        ]
+      },
+      "days": {
+        "role": "secondary",
+        "displayName": "Days",
+        "tonalRamp": [
+          "oklch(15% 0.1318 14.21)",
+          "oklch(26% 0.1318 14.21)",
+          "oklch(38% 0.1318 14.21)",
+          "oklch(49% 0.1318 14.21)",
+          "oklch(61% 0.1318 14.21)",
+          "oklch(72% 0.1318 14.21)",
+          "oklch(84% 0.1318 14.21)",
+          "oklch(95% 0.1318 14.21)"
+        ]
+      },
+      "ratio-office": {
+        "role": "secondary",
+        "displayName": "Ratio Office",
+        "tonalRamp": [
+          "oklch(15% 0.0865 323.71)",
+          "oklch(26% 0.0865 323.71)",
+          "oklch(38% 0.0865 323.71)",
+          "oklch(49% 0.0865 323.71)",
+          "oklch(61% 0.0865 323.71)",
+          "oklch(72% 0.0865 323.71)",
+          "oklch(84% 0.0865 323.71)",
+          "oklch(95% 0.0865 323.71)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Masthead identity."
+      },
+      "section": {
+        "displayName": "Section",
+        "purpose": "Analytical section headings."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Chart titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Methodology and compact explanatory copy."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Filter and table labels."
+      },
+      "metric": {
+        "displayName": "Metric",
+        "purpose": "Supporting summary values."
+      },
+      "metric-primary": {
+        "displayName": "Metric Primary",
+        "purpose": "Desktop median close price."
+      }
+    },
+    "shadows": [
+      {
+        "name": "flat-panels",
+        "value": "none",
+        "purpose": "Panels use borders; MapLibre controls explicitly suppress the library shadow."
+      }
+    ],
+    "motion": [
+      {
+        "name": "button-transition",
+        "value": "background .16s, color .16s",
+        "purpose": "Button state feedback; disabled for reduced motion."
+      },
+      {
+        "name": "chart-duration",
+        "value": "300ms",
+        "purpose": "ECharts transitions; disabled for reduced motion."
+      },
+      {
+        "name": "map-reset-duration",
+        "value": "450ms",
+        "purpose": "Reset bounds; zero duration for reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "wide-min",
+        "value": "1600px"
+      },
+      {
+        "name": "compact-max",
+        "value": "1150px"
+      },
+      {
+        "name": "mobile-max",
+        "value": "800px"
+      },
+      {
+        "name": "narrow-max",
+        "value": "430px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Default Button",
+      "kind": "button",
+      "refersTo": "button-default",
+      "description": "Quiet bordered action used for export and retries.",
+      "html": "<button class=\"ds-button\">Export table</button>",
+      "css": ".ds-button{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;font-variant-numeric:tabular-nums;font-size:13px;font-weight:500;color:#233d52;background:var(--surface,#fff);border:1px solid var(--border,#dbe3ea);border-radius:6px;padding:8px 12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;transition:background .16s,color .16s;}.ds-button:hover{background:#edf2f6}.ds-button:focus-visible{outline:3px solid var(--focus,#bd632c);outline-offset:3px;}.ds-button:disabled{opacity:.4;cursor:default}@media(prefers-reduced-motion:reduce){.ds-button{transition:none}}"
+    },
+    {
+      "name": "Ghost Reset",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Low-emphasis reset action.",
+      "html": "<button class=\"ds-reset\">Reset</button>",
+      "css": ".ds-reset{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;font-variant-numeric:tabular-nums;font-size:13px;font-weight:500;color:#233d52;background:var(--surface,#fff);border:1px solid var(--border,#dbe3ea);border-radius:6px;padding:8px 12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;transition:background .16s,color .16s;border:0;background:transparent;color:var(--muted,#536a7d);height:38px}.ds-reset:hover{background:#edf2f6}.ds-reset:focus-visible{outline:3px solid var(--focus,#bd632c);outline-offset:3px;}@media(prefers-reduced-motion:reduce){.ds-reset{transition:none}}"
+    },
+    {
+      "name": "Market Select",
+      "kind": "input",
+      "refersTo": "field-select",
+      "description": "Native labeled filter control.",
+      "html": "<label class=\"ds-field\">County<select><option>All counties</option><option>Los Angeles</option></select></label>",
+      "css": ".ds-field{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:600;color:var(--muted,#536a7d)}.ds-field select{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;font-variant-numeric:tabular-nums;font-size:13px;min-height:38px;padding:7px 28px 7px 10px;border:1px solid #cbd7e0;border-radius:5px;background:#fff;color:#233d52;cursor:pointer}.ds-field select:focus-visible{outline:3px solid var(--focus,#bd632c);outline-offset:3px;}"
+    },
+    {
+      "name": "Segmented Selection",
+      "kind": "button",
+      "refersTo": "segmented-selected",
+      "description": "Shared control for geography and time range.",
+      "html": "<div class=\"ds-segmented\" aria-label=\"Map geography\"><button aria-pressed=\"true\">County</button><button aria-pressed=\"false\">ZIP</button></div>",
+      "css": ".ds-segmented{display:inline-flex;border:1px solid #cdd9e2;border-radius:5px;overflow:hidden}.ds-segmented button{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;font-variant-numeric:tabular-nums;font-size:13px;font-weight:500;color:#233d52;background:var(--surface,#fff);border:1px solid var(--border,#dbe3ea);border-radius:6px;padding:8px 12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;transition:background .16s,color .16s;border:0;border-radius:0;font-size:12px;padding:7px 11px;white-space:nowrap}.ds-segmented button+button{border-left:1px solid #cdd9e2}.ds-segmented button:hover{background:#edf2f6}.ds-segmented button[aria-pressed=true]{background:#e8eff4;color:#183e5e}.ds-segmented button:focus-visible{outline:3px solid var(--focus,#bd632c);outline-offset:3px;}@media(prefers-reduced-motion:reduce){.ds-segmented button{transition:none}}"
+    },
+    {
+      "name": "Analysis Tabs",
+      "kind": "nav",
+      "refersTo": "analysis-tab",
+      "description": "Underlined analytical navigation.",
+      "html": "<div class=\"ds-tabs\" role=\"tablist\" aria-label=\"Analysis\"><button role=\"tab\" aria-selected=\"true\">Market Trends</button><button role=\"tab\" aria-selected=\"false\">Competitive Analysis</button></div>",
+      "css": ".ds-tabs{display:flex;gap:28px;border-bottom:1px solid #cedae3}.ds-tabs button{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;font-variant-numeric:tabular-nums;font-size:13px;font-weight:500;color:#233d52;background:var(--surface,#fff);border:1px solid var(--border,#dbe3ea);border-radius:6px;padding:8px 12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;transition:background .16s,color .16s;border:0;border-radius:0;background:transparent;color:#60768a;padding:14px 0;font-size:14px;border-bottom:3px solid transparent}.ds-tabs button[aria-selected=true]{color:var(--navy,#23496b);border-bottom-color:var(--navy,#23496b);font-weight:650}.ds-tabs button:focus-visible{outline:3px solid var(--focus,#bd632c);outline-offset:3px;}@media(prefers-reduced-motion:reduce){.ds-tabs button{transition:none}}"
+    },
+    {
+      "name": "Chart Container",
+      "kind": "card",
+      "refersTo": "chart-panel",
+      "description": "Analytical panel with a table disclosure; sample values are illustrative.",
+      "html": "<section class=\"ds-chart\"><h3>Closed sales</h3><p>Completed transactions</p><svg viewBox=\"0 0 280 100\" role=\"img\" aria-label=\"Illustrative closed sales line\"><path d=\"M15 80H265M15 45H265M15 10H265\" fill=\"none\" stroke=\"#edf1f4\"/><path d=\"M15 70L65 50L115 55L165 20L215 35L265 15\" fill=\"none\" stroke=\"#258187\" stroke-width=\"2.5\" stroke-dasharray=\"7 5\"/></svg><details><summary>View data table</summary><p>Illustrative component preview</p></details></section>",
+      "css": ".ds-chart{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;font-variant-numeric:tabular-nums;background:var(--surface,#fff);color:#233d52;border:1px solid var(--border,#dbe3ea);border-radius:10px;overflow:hidden}.ds-chart h3{font-size:16px;font-weight:600;letter-spacing:-.015em;margin:19px 22px 0}.ds-chart p{font-size:11px;color:var(--muted,#536a7d);margin:4px 22px 12px}.ds-chart svg{display:block;width:calc(100% - 24px);margin:0 12px}.ds-chart details{padding:8px 20px 13px;font-size:10px;color:var(--muted,#536a7d)}.ds-chart summary{cursor:pointer;width:max-content}.ds-chart summary:focus-visible{outline:3px solid var(--focus,#bd632c);outline-offset:3px;}"
+    },
+    {
+      "name": "Area Summary",
+      "kind": "card",
+      "refersTo": "area-summary",
+      "description": "Selected market context with a dominant metric; sample content is illustrative.",
+      "html": "<aside class=\"ds-summary\"><h2>California</h2><p>August 2026 \u00b7 All residential</p><div class=\"ds-metric\"><span>Median close price</span><strong>$655,000</strong><small>1.9% vs. previous month</small></div><button>How these metrics are calculated</button></aside>",
+      "css": ".ds-summary{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;font-variant-numeric:tabular-nums;color:#233d52;background:var(--surface,#fff);border:1px solid var(--border,#dbe3ea);border-radius:12px;padding:24px 25px 18px}.ds-summary h2{font-size:24px;font-weight:600;letter-spacing:-.02em;margin:0}.ds-summary p{font-size:12px;color:var(--muted,#536a7d);margin:3px 0 0}.ds-metric{display:flex;flex-direction:column;padding:22px 0 25px}.ds-metric span{font-size:12px;color:var(--muted,#536a7d)}.ds-metric strong{color:var(--navy,#23496b);font-size:43px;letter-spacing:-.035em;line-height:1.3;font-weight:600;margin-top:6px}.ds-metric small{font-size:10px;color:#536b7f;margin-top:7px}.ds-summary button{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;font-variant-numeric:tabular-nums;font-size:13px;font-weight:500;color:#233d52;background:var(--surface,#fff);border:1px solid var(--border,#dbe3ea);border-radius:6px;padding:8px 12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;transition:background .16s,color .16s;border:0;border-top:1px solid var(--border,#dbe3ea);border-radius:0;padding:15px 0 0;font-size:11px;color:#4d6b82}.ds-summary button:hover{background:#edf2f6}.ds-summary button:focus-visible{outline:3px solid var(--focus,#bd632c);outline-offset:3px;}@media(prefers-reduced-motion:reduce){.ds-summary button{transition:none}}"
+    },
+    {
+      "name": "Map Frame",
+      "kind": "custom",
+      "refersTo": "map-panel",
+      "description": "Pale geographic field and six-stop legend; geometry is supplied by the application.",
+      "html": "<section class=\"ds-map\"><h2>Explore the market</h2><div class=\"ds-map-field\"><span>California</span><div class=\"ds-legend\">Median close price<div class=\"ds-ramp\"></div><div class=\"ds-ends\"><span>Lower</span><span>Higher</span></div></div></div></section>",
+      "css": ".ds-map{font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;font-variant-numeric:tabular-nums;color:#233d52;background:var(--surface,#fff);border:1px solid var(--border,#dbe3ea);border-radius:12px;overflow:hidden}.ds-map h2{font-size:17px;font-weight:650;margin:16px 20px}.ds-map-field{position:relative;height:220px;background:#edf3f6;padding:18px 20px;color:#3b5d75;font-size:12px}.ds-legend{position:absolute;left:20px;bottom:27px;width:150px;font-size:11px}.ds-ramp{height:7px;margin:8px 0 3px;background:linear-gradient(to right,#dcecee 0% 16.67%,#b2d4d7 16.67% 33.33%,#78afb8 33.33% 50%,#488b9c 50% 66.67%,#2f687f 66.67% 83.33%,#23496b 83.33% 100%)}.ds-ends{display:flex;justify-content:space-between;color:var(--muted,#536a7d);font-size:10px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "California in Focus",
+    "overview": "California in Focus is a calm analytical workspace: navy identity frames real geography, and crisp white surfaces keep numbers and comparisons legible. The map and selected-area summary form a coupled overview; analysis continues below without losing the selected market.\n\nThe visual language is compact, practical and restrained. System sans typography and tabular numerals are confirmed project choices. Color earns its place through identity, selection, focus or a stable data-series role; the interface carries no marketing content.",
+    "keyCharacteristics": [
+      "Navy identity with cool pale geography and white analytical surfaces.",
+      "Compact system typography with aligned tabular numerals.",
+      "Fine blue-gray boundaries and flat, gently rounded containers.",
+      "Consistent series colors, visible focus and table alternatives."
+    ],
+    "rules": [
+      {
+        "name": "The Identity and Evidence Rule",
+        "body": "Use navy for identity and selection; reserve the chart palette for stable metric and entity meanings.",
+        "section": "colors"
+      },
+      {
+        "name": "The Numeric Rhythm Rule",
+        "body": "Keep tabular numerals and explicit units across summaries, axes and tables.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Surface Rule",
+        "body": "Use subtle borders and tonal separation to establish panels; do not add ornamental shadows.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do preserve the navy identity and confirmed system font stack.",
+      "Do couple geographic selection to visible market context.",
+      "Do retain explicit units, neutral month comparisons and table alternatives for every chart.",
+      "Do keep keyboard focus visible and respect reduced motion.",
+      "Do keep price and mortgage rate in aligned plots with separate labeled scales."
+    ],
+    "donts": [
+      "Don't replace real geography with decorative imagery.",
+      "Don't use metric colors as arbitrary interface accents.",
+      "Don't introduce marketing content or decorative display typography.",
+      "Don't hide selection state in color alone; preserve labels, pressed states and the active-tab underline.",
+      "Don't force desktop columns onto narrow screens."
+    ]
+  }
+}

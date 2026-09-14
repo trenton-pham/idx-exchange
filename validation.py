@@ -18,7 +18,12 @@ def missing_value_analysis(data):
 
 def filter_missing_columns(data, threshold=50):
     missing_df = missing_value_analysis(data)
-    columns_to_drop = missing_df[missing_df["missing_pct"] > threshold].index.tolist()
+    protected = {"ListingKey", "ListingKeyNumeric", "ModificationTimestamp", "ListAgentKey", "ListOfficeKey",
+                 "CloseDate", "ListingContractDate", "PurchaseContractDate", "ContractStatusChangeDate",
+                 "ClosePrice", "OriginalListPrice", "LivingArea", "DaysOnMarket", "CountyOrParish", "City",
+                 "PostalCode", "StateOrProvince", "PropertyType", "PropertySubType", "Latitude", "Longitude",
+                 "ListAgentFullName", "ListOfficeName", "ListingId", "StandardStatus", "OriginatingSystemName"}
+    columns_to_drop = [column for column in missing_df[missing_df["missing_pct"] > threshold].index if column not in protected]
     filtered_data = data.drop(columns=columns_to_drop)
     return filtered_data, columns_to_drop
 

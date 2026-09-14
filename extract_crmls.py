@@ -112,6 +112,9 @@ PROPERTY_FIELDS = (
     "OriginatingSystemName",
     "OriginatingSystemSubName",
     "StandardStatus",
+    "ModificationTimestamp",
+    "ListAgentKey",
+    "ListOfficeKey",
 )
 
 

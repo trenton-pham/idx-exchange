@@ -1,0 +1,49 @@
+name: Deploy
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: housing-production
+  cancel-in-progress: false
+jobs:
+  validate:
+    uses: ./.github/workflows/ci.yml
+  deploy:
+    needs: validate
+    if: vars.AWS_DEPLOY_ROLE_ARN != ''
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: us-west-2
+      FOUNDATION_STACK: ${{ vars.FOUNDATION_STACK || 'housing-foundation' }}
+      APPLICATION_STACK: ${{ vars.APPLICATION_STACK || 'housing-app' }}
+      SCHEDULE_STATE: ${{ vars.SCHEDULE_STATE || 'DISABLED' }}
+      CREDENTIAL_REVISION: ${{ vars.CREDENTIAL_REVISION || '1' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: aws-actions/setup-sam@v2
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-west-2
+      - name: Build and publish immutable ingestion image
+        run: |
+          repository=$(aws cloudformation describe-stacks --stack-name "$FOUNDATION_STACK" --query 'Stacks[0].Outputs[?OutputKey==`RepositoryUri`].OutputValue' --output text)
+          aws ecr get-login-password | docker login --username AWS --password-stdin "${repository%%/*}"
+          if ! aws ecr describe-images --repository-name "${repository#*/}" --image-ids imageTag="$GITHUB_SHA" >/dev/null 2>&1; then
+            docker build --platform linux/amd64 -t "$repository:$GITHUB_SHA" .
+            docker push "$repository:$GITHUB_SHA"
+          fi
+          echo "PIPELINE_IMAGE=$repository:$GITHUB_SHA" >> "$GITHUB_ENV"
+      - name: Deploy API, schedule configuration and website
+        run: python -m scripts.aws_release --foundation "$FOUNDATION_STACK" --application "$APPLICATION_STACK" --image "$PIPELINE_IMAGE" --schedule "$SCHEDULE_STATE" --credential-revision "$CREDENTIAL_REVISION" --release "$GITHUB_SHA"

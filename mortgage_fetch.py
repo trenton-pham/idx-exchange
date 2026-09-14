@@ -1,47 +1,36 @@
+"""FRED MORTGAGE30US, averaged without listing weights."""
+from io import StringIO
+from pathlib import Path
 import pandas as pd
-import pathlib as Path
-import os
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
-# Fetch the mortgage rate data from FRED
-url = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=MORTGAGE30US"
-mortgage = pd.read_csv(url, parse_dates=['observation_date'])
-mortgage.columns = ['date', 'rate_30yr_fixed']
+SOURCE_URL="https://fred.stlouisfed.org/graph/fredgraph.csv?id=MORTGAGE30US"
 
-# Resample weekly rates to monthly averages
-mortgage['year_month'] = mortgage['date'].dt.to_period('M')
-mortgage_monthly = (
-mortgage.groupby('year_month')['rate_30yr_fixed']
-.mean()
-.reset_index()
-)
-# Create a matching year_month key on the MLS datasets
-# Sold dataset — key off CloseDate
-sold_file_path = Path.Path("data/filtered/CRMLSSold_filtered.csv")
-sold = pd.read_csv(sold_file_path, low_memory=False)
-sold['year_month'] = pd.to_datetime(sold['CloseDate']).dt.to_period('M')
-# Listings dataset — key off ListingContractDate
+def monthly_rates(weekly):
+    weekly=weekly.copy(); weekly.columns=["date","rate_30yr_fixed"]
+    weekly["date"]=pd.to_datetime(weekly["date"],errors="coerce")
+    weekly["rate_30yr_fixed"]=pd.to_numeric(weekly["rate_30yr_fixed"],errors="coerce")
+    weekly["year_month"]=weekly["date"].dt.to_period("M").astype(str)
+    return weekly.dropna(subset=["date"]).groupby("year_month",as_index=False)["rate_30yr_fixed"].mean()
 
-listings_file_path = Path.Path("data/filtered/CRMLSListing_filtered.csv")
-listings = pd.read_csv(listings_file_path, low_memory=False)
-listings['year_month'] = pd.to_datetime(
-listings['ListingContractDate']
-).dt.to_period('M')
+def fetch_rates():
+    session=requests.Session()
+    session.mount("https://",HTTPAdapter(max_retries=Retry(total=4,backoff_factor=1,status_forcelist=[429,500,502,503,504])))
+    response=session.get(SOURCE_URL,timeout=45); response.raise_for_status()
+    return monthly_rates(pd.read_csv(StringIO(response.text)))
 
-# Merge
-sold_with_rates = sold.merge(mortgage_monthly, on='year_month', how='left')
-listings_with_rates = listings.merge(mortgage_monthly, on='year_month', how='left')
-# Validate the merge
-# Check for any unmatched rows (rate should not be null)
-print(sold_with_rates['rate_30yr_fixed'].isnull().sum())
-print(listings_with_rates['rate_30yr_fixed'].isnull().sum())
-# Preview
-print(
-sold_with_rates[
-['CloseDate', 'year_month', 'ClosePrice', 'rate_30yr_fixed']
-].head()
-)
+def enrich(frame,rates,date_column):
+    result=frame.copy()
+    result["year_month"]=pd.to_datetime(result[date_column],errors="coerce",utc=True).dt.strftime("%Y-%m")
+    result=result.drop(columns=["rate_30yr_fixed"],errors="ignore")
+    return result.merge(rates,on="year_month",how="left",validate="many_to_one")
 
-# Save new datasets with mortgage rates
-output_dir = Path.Path("data/mortgage")
-listings_with_rates.to_csv(os.path.join(output_dir, "CRMLSListing_with_mortgage.csv"), index=False)
-sold_with_rates.to_csv(os.path.join(output_dir, "CRMLSSold_with_mortgage.csv"), index=False)
+def main():
+    rates=fetch_rates(); target=Path("data/mortgage"); target.mkdir(parents=True,exist_ok=True)
+    for kind,column in (("Listing","ListingContractDate"),("Sold","CloseDate")):
+        frame=pd.read_csv(f"data/filtered/CRMLS{kind}_filtered.csv",low_memory=False)
+        enrich(frame,rates,column).to_csv(target/f"CRMLS{kind}_with_mortgage.csv",index=False)
+
+if __name__=="__main__": main()

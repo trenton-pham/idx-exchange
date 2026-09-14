@@ -1,0 +1,8 @@
+{
+  "sources": {
+    "counties": "https://www2.census.gov/geo/tiger/GENZ2024/shp/cb_2024_us_county_500k.zip",
+    "zctas": "https://www2.census.gov/geo/tiger/GENZ2020/shp/cb_2020_us_zcta520_500k.zip"
+  },
+  "license": "US Census Bureau public data",
+  "processing": "California only; EPSG:4326; topology-preserving simplification; ZCTAs clipped to state. ZCTAs approximate postal ZIP areas."
+}

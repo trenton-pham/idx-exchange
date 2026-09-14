@@ -1,0 +1,311 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Monthly Fargate ingestion, private API Lambda, and CloudFront dashboard.
+Parameters:
+  PipelineImage: {Type: String, Description: Immutable ECR image URI with release tag or digest}
+  PublicSubnet: {Type: AWS::EC2::Subnet::Id}
+  PrivateSubnets: {Type: 'List<AWS::EC2::Subnet::Id>'}
+  ApiSecurityGroup: {Type: AWS::EC2::SecurityGroup::Id}
+  JobSecurityGroup: {Type: AWS::EC2::SecurityGroup::Id}
+  DatabaseHost: {Type: String}
+  AdminSecretArn: {Type: String}
+  ApiSecretArn: {Type: String}
+  IngestSecretArn: {Type: String}
+  TrestleSecretArn: {Type: String}
+  ArchiveBucket: {Type: String}
+  WebBucket: {Type: String}
+  AlertsTopicArn: {Type: String}
+  ScheduleState: {Type: String, Default: DISABLED, AllowedValues: [ENABLED, DISABLED]}
+  CredentialRevision: {Type: String, Default: '1', Description: Increment when rotating API credentials to refresh the dynamic reference}
+Globals:
+  Function:
+    Runtime: python3.13
+    Architectures: [x86_64]
+    Timeout: 15
+    MemorySize: 512
+    Environment:
+      Variables:
+        DB_HOST: !Ref DatabaseHost
+        DB_NAME: housing
+        DB_USER: api_reader
+        DB_PASSWORD: !Sub '{{resolve:secretsmanager:${ApiSecretArn}:SecretString:password}}'
+        CREDENTIAL_REVISION: !Ref CredentialRevision
+    VpcConfig: {SubnetIds: !Ref PrivateSubnets, SecurityGroupIds: [!Ref ApiSecurityGroup]}
+Resources:
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      DefaultRouteSettings: {ThrottlingBurstLimit: 20, ThrottlingRateLimit: 10}
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Metadata: {BuildMethod: makefile}
+    Properties:
+      CodeUri: ../backend/
+      Handler: backend.app.handler
+      ReservedConcurrentExecutions: 5
+      Policies: [AWSLambdaVPCAccessExecutionRole]
+      Events:
+        Api: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Path: '/{proxy+}', Method: GET}}
+  ApiLogs:
+    Type: AWS::Logs::LogGroup
+    Properties: {LogGroupName: !Sub '/aws/lambda/${ApiFunction}', RetentionInDays: 14}
+  FreshnessFunction:
+    Type: AWS::Serverless::Function
+    Metadata: {BuildMethod: makefile}
+    Properties:
+      CodeUri: ../backend/
+      Handler: backend.health.handler
+      Policies: [AWSLambdaVPCAccessExecutionRole]
+      Events:
+        MonthlyCheck:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: 'cron(0 8 8 * ? *)'
+            ScheduleExpressionTimezone: America/Los_Angeles
+            State: !Ref ScheduleState
+  FreshnessLogs:
+    Type: AWS::Logs::LogGroup
+    Properties: {LogGroupName: !Sub '/aws/lambda/${FreshnessFunction}', RetentionInDays: 14}
+  FreshnessAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: The expected completed month was not published by day 8
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{Name: FunctionName, Value: !Ref FreshnessFunction}]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlertsTopicArn]
+  Cluster: {Type: 'AWS::ECS::Cluster'}
+  JobLogs:
+    Type: AWS::Logs::LogGroup
+    Properties: {RetentionInDays: 30}
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: {Version: '2012-10-17', Statement: [{Effect: Allow, Principal: {Service: ecs-tasks.amazonaws.com}, Action: 'sts:AssumeRole'}]}
+      ManagedPolicyArns: [!Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy']
+      Policies:
+        - PolicyName: TaskSecrets
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement: [{Effect: Allow, Action: 'secretsmanager:GetSecretValue', Resource: [!Ref IngestSecretArn, !Ref TrestleSecretArn, !Ref AdminSecretArn]}]
+  JobRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: {Version: '2012-10-17', Statement: [{Effect: Allow, Principal: {Service: ecs-tasks.amazonaws.com}, Action: 'sts:AssumeRole'}]}
+      Policies:
+        - PolicyName: PrivateArchive
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - {Effect: Allow, Action: ['s3:GetObject', 's3:PutObject', 's3:AbortMultipartUpload'], Resource: !Sub 'arn:${AWS::Partition}:s3:::${ArchiveBucket}/*'}
+              - {Effect: Allow, Action: 's3:ListBucket', Resource: !Sub 'arn:${AWS::Partition}:s3:::${ArchiveBucket}'}
+  MigrationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: {Version: '2012-10-17', Statement: [{Effect: Allow, Principal: {Service: ecs-tasks.amazonaws.com}, Action: 'sts:AssumeRole'}]}
+      Policies:
+        - PolicyName: ApplicationCredentials
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement: [{Effect: Allow, Action: 'secretsmanager:GetSecretValue', Resource: [!Ref ApiSecretArn, !Ref IngestSecretArn]}]
+  IngestTask:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: '2048'
+      Memory: '16384'
+      RuntimePlatform: {CpuArchitecture: X86_64, OperatingSystemFamily: LINUX}
+      ExecutionRoleArn: !GetAtt ExecutionRole.Arn
+      TaskRoleArn: !GetAtt JobRole.Arn
+      ContainerDefinitions:
+        - Name: pipeline
+          Image: !Ref PipelineImage
+          Essential: true
+          StopTimeout: 120
+          Environment:
+            - {Name: DB_HOST, Value: !Ref DatabaseHost}
+            - {Name: DB_NAME, Value: housing}
+            - {Name: DB_USER, Value: etl_writer}
+            - {Name: ARCHIVE_BUCKET, Value: !Ref ArchiveBucket}
+          Secrets:
+            - {Name: DB_PASSWORD, ValueFrom: !Sub '${IngestSecretArn}:password::'}
+            - {Name: CORELOGIC_API_URL, ValueFrom: !Sub '${TrestleSecretArn}:CORELOGIC_API_URL::'}
+            - {Name: AUTH_ENDPOINT, ValueFrom: !Sub '${TrestleSecretArn}:AUTH_ENDPOINT::'}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options: {awslogs-group: !Ref JobLogs, awslogs-region: !Ref 'AWS::Region', awslogs-stream-prefix: ingestion}
+  MigrationTask:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: '256'
+      Memory: '512'
+      ExecutionRoleArn: !GetAtt ExecutionRole.Arn
+      TaskRoleArn: !GetAtt MigrationRole.Arn
+      ContainerDefinitions:
+        - Name: migration
+          Image: !Ref PipelineImage
+          Essential: true
+          Command: [backend.bootstrap]
+          Environment:
+            - {Name: DB_HOST, Value: !Ref DatabaseHost}
+            - {Name: DB_NAME, Value: housing}
+            - {Name: DB_USER, Value: idx_admin}
+            - {Name: API_SECRET_ARN, Value: !Ref ApiSecretArn}
+            - {Name: INGEST_SECRET_ARN, Value: !Ref IngestSecretArn}
+          Secrets: [{Name: DB_PASSWORD, ValueFrom: !Sub '${AdminSecretArn}:password::'}]
+          LogConfiguration:
+            LogDriver: awslogs
+            Options: {awslogs-group: !Ref JobLogs, awslogs-region: !Ref 'AWS::Region', awslogs-stream-prefix: migration}
+  DeadLetterQueue: {Type: 'AWS::SQS::Queue', Properties: {MessageRetentionPeriod: 1209600, SqsManagedSseEnabled: true}}
+  SchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: {Version: '2012-10-17', Statement: [{Effect: Allow, Principal: {Service: scheduler.amazonaws.com}, Action: 'sts:AssumeRole', Condition: {StringEquals: {'aws:SourceAccount': !Ref 'AWS::AccountId'}}}]}
+      Policies:
+        - PolicyName: RunMonthlyJob
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - {Effect: Allow, Action: 'ecs:RunTask', Resource: !Ref IngestTask, Condition: {ArnEquals: {'ecs:cluster': !GetAtt Cluster.Arn}}}
+              - {Effect: Allow, Action: 'iam:PassRole', Resource: [!GetAtt ExecutionRole.Arn, !GetAtt JobRole.Arn], Condition: {StringEquals: {'iam:PassedToService': ecs-tasks.amazonaws.com}}}
+              - {Effect: Allow, Action: 'sqs:SendMessage', Resource: !GetAtt DeadLetterQueue.Arn}
+  MonthlySchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      ScheduleExpression: 'cron(0 6 7 * ? *)'
+      ScheduleExpressionTimezone: America/Los_Angeles
+      FlexibleTimeWindow: {Mode: 'OFF'}
+      State: !Ref ScheduleState
+      Target:
+        Arn: !GetAtt Cluster.Arn
+        RoleArn: !GetAtt SchedulerRole.Arn
+        DeadLetterConfig: {Arn: !GetAtt DeadLetterQueue.Arn}
+        RetryPolicy: {MaximumEventAgeInSeconds: 3600, MaximumRetryAttempts: 2}
+        EcsParameters:
+          TaskDefinitionArn: !Ref IngestTask
+          LaunchType: FARGATE
+          TaskCount: 1
+          PlatformVersion: LATEST
+          NetworkConfiguration:
+            AwsvpcConfiguration: {Subnets: [!Ref PublicSubnet], SecurityGroups: [!Ref JobSecurityGroup], AssignPublicIp: ENABLED}
+  DispatchAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions: [{Name: QueueName, Value: !GetAtt DeadLetterQueue.QueueName}]
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlertsTopicArn]
+  JobFailureRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventPattern:
+        source: [aws.ecs]
+        detail-type: [ECS Task State Change]
+        detail:
+          clusterArn: [!GetAtt Cluster.Arn]
+          lastStatus: [STOPPED]
+          containers: {exitCode: [{anything-but: 0}]}
+      Targets: [{Id: Alert, Arn: !Ref AlertsTopicArn}]
+  JobStartFailureRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventPattern:
+        source: [aws.ecs]
+        detail-type: [ECS Task State Change]
+        detail: {clusterArn: [!GetAtt Cluster.Arn], lastStatus: [STOPPED], stopCode: [TaskFailedToStart]}
+      Targets: [{Id: Alert, Arn: !Ref AlertsTopicArn}]
+  OriginAccess:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig: {Name: !Sub '${AWS::StackName}-web', OriginAccessControlOriginType: s3, SigningBehavior: always, SigningProtocol: sigv4}
+  ApiCache:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        Name: !Sub '${AWS::StackName}-api'
+        MinTTL: 0
+        DefaultTTL: 60
+        MaxTTL: 300
+        ParametersInCacheKeyAndForwardedToOrigin:
+          EnableAcceptEncodingGzip: true
+          EnableAcceptEncodingBrotli: true
+          CookiesConfig: {CookieBehavior: none}
+          HeadersConfig: {HeaderBehavior: none}
+          QueryStringsConfig: {QueryStringBehavior: all}
+  WebHeaders:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: !Sub '${AWS::StackName}-security'
+        SecurityHeadersConfig:
+          ContentTypeOptions: {Override: true}
+          FrameOptions: {FrameOption: DENY, Override: true}
+          ReferrerPolicy: {ReferrerPolicy: strict-origin-when-cross-origin, Override: true}
+          StrictTransportSecurity: {AccessControlMaxAgeSec: 31536000, IncludeSubdomains: true, Override: true}
+          ContentSecurityPolicy:
+            Override: true
+            ContentSecurityPolicy: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        PriceClass: PriceClass_100
+        HttpVersion: http2and3
+        Origins:
+          - Id: web
+            DomainName: !Sub '${WebBucket}.s3.${AWS::Region}.amazonaws.com'
+            OriginAccessControlId: !Ref OriginAccess
+            S3OriginConfig: {OriginAccessIdentity: ''}
+          - Id: api
+            DomainName: !Sub '${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+            CustomOriginConfig: {OriginProtocolPolicy: https-only, HTTPSPort: 443, OriginSSLProtocols: [TLSv1.2]}
+        DefaultCacheBehavior:
+          TargetOriginId: web
+          ViewerProtocolPolicy: redirect-to-https
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          ResponseHeadersPolicyId: !Ref WebHeaders
+        CacheBehaviors:
+          - PathPattern: /api/*
+            TargetOriginId: api
+            ViewerProtocolPolicy: redirect-to-https
+            Compress: true
+            CachePolicyId: !Ref ApiCache
+            ResponseHeadersPolicyId: !Ref WebHeaders
+  WebPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: cloudfront.amazonaws.com}
+            Action: s3:GetObject
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${WebBucket}/*'
+            Condition: {StringEquals: {'AWS:SourceArn': !Sub 'arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${Distribution}'}}
+Outputs:
+  WebsiteUrl: {Value: !Sub 'https://${Distribution.DomainName}'}
+  DistributionId: {Value: !Ref Distribution}
+  Cluster: {Value: !Ref Cluster}
+  IngestTask: {Value: !Ref IngestTask}
+  MigrationTask: {Value: !Ref MigrationTask}
+  MonthlySchedule: {Value: !Ref MonthlySchedule}
+  JobLogGroup: {Value: !Ref JobLogs}

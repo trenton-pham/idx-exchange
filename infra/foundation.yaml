@@ -1,0 +1,167 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Private California housing data foundation (no NAT gateway).
+Parameters:
+  AlertEmail: {Type: String, Description: Email for budget and operational alerts}
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties: {CidrBlock: 10.42.0.0/16, EnableDnsSupport: true, EnableDnsHostnames: true}
+  InternetGateway: {Type: 'AWS::EC2::InternetGateway'}
+  GatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: {VpcId: !Ref Vpc, InternetGatewayId: !Ref InternetGateway}
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties: {VpcId: !Ref Vpc, CidrBlock: 10.42.1.0/24, AvailabilityZone: !Select [0, !GetAZs '']}
+  PrivateA:
+    Type: AWS::EC2::Subnet
+    Properties: {VpcId: !Ref Vpc, CidrBlock: 10.42.11.0/24, AvailabilityZone: !Select [0, !GetAZs '']}
+  PrivateB:
+    Type: AWS::EC2::Subnet
+    Properties: {VpcId: !Ref Vpc, CidrBlock: 10.42.12.0/24, AvailabilityZone: !Select [1, !GetAZs '']}
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: {VpcId: !Ref Vpc}
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: GatewayAttachment
+    Properties: {RouteTableId: !Ref PublicRouteTable, DestinationCidrBlock: 0.0.0.0/0, GatewayId: !Ref InternetGateway}
+  PublicRouteAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: {SubnetId: !Ref PublicSubnet, RouteTableId: !Ref PublicRouteTable}
+  ApiSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Private API database connections only
+      VpcId: !Ref Vpc
+      SecurityGroupEgress: [{IpProtocol: tcp, FromPort: 5432, ToPort: 5432, CidrIp: 10.42.0.0/16}]
+  JobSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Outbound HTTPS to Trestle and AWS; private PostgreSQL
+      VpcId: !Ref Vpc
+      SecurityGroupEgress:
+        - {IpProtocol: tcp, FromPort: 443, ToPort: 443, CidrIp: 0.0.0.0/0}
+        - {IpProtocol: tcp, FromPort: 5432, ToPort: 5432, CidrIp: 10.42.0.0/16}
+  DatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: PostgreSQL accepts only API and ingestion roles
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - {IpProtocol: tcp, FromPort: 5432, ToPort: 5432, SourceSecurityGroupId: !Ref ApiSecurityGroup}
+        - {IpProtocol: tcp, FromPort: 5432, ToPort: 5432, SourceSecurityGroupId: !Ref JobSecurityGroup}
+  DatabaseSubnets:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties: {DBSubnetGroupDescription: Private database subnets, SubnetIds: [!Ref PrivateA, !Ref PrivateB]}
+  AdminSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      GenerateSecretString: {SecretStringTemplate: '{"username":"idx_admin"}', GenerateStringKey: password, PasswordLength: 32, ExcludePunctuation: true}
+  ApiSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      GenerateSecretString: {SecretStringTemplate: '{"username":"api_reader"}', GenerateStringKey: password, PasswordLength: 32, ExcludePunctuation: true}
+  IngestSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      GenerateSecretString: {SecretStringTemplate: '{"username":"etl_writer"}', GenerateStringKey: password, PasswordLength: 32, ExcludePunctuation: true}
+  TrestleSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: Populate CORELOGIC_API_URL and AUTH_ENDPOINT using the Secrets Manager console before ingestion
+      SecretString: '{"CORELOGIC_API_URL":"","AUTH_ENDPOINT":""}'
+  Database:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      Engine: postgres
+      EngineVersion: '17.11'
+      DBInstanceClass: db.t4g.micro
+      DBName: housing
+      AllocatedStorage: '20'
+      StorageType: gp3
+      StorageEncrypted: true
+      BackupRetentionPeriod: 7
+      MultiAZ: false
+      PubliclyAccessible: false
+      DeletionProtection: true
+      AutoMinorVersionUpgrade: true
+      MasterUsername: idx_admin
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${AdminSecret}:SecretString:password}}'
+      DBSubnetGroupName: !Ref DatabaseSubnets
+      VPCSecurityGroups: [!Ref DatabaseSecurityGroup]
+  ArchiveBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      PublicAccessBlockConfiguration: {BlockPublicAcls: true, BlockPublicPolicy: true, IgnorePublicAcls: true, RestrictPublicBuckets: true}
+      VersioningConfiguration: {Status: Enabled}
+      BucketEncryption: {ServerSideEncryptionConfiguration: [{ServerSideEncryptionByDefault: {SSEAlgorithm: AES256}}]}
+      LifecycleConfiguration:
+        Rules: [{Id: ExpireIncompleteUploads, Status: Enabled, AbortIncompleteMultipartUpload: {DaysAfterInitiation: 1}}]
+  ArchivePolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ArchiveBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement: [{Effect: Deny, Principal: '*', Action: 's3:*', Resource: [!GetAtt ArchiveBucket.Arn, !Sub '${ArchiveBucket.Arn}/*'], Condition: {Bool: {'aws:SecureTransport': 'false'}}}]
+  WebBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      PublicAccessBlockConfiguration: {BlockPublicAcls: true, BlockPublicPolicy: true, IgnorePublicAcls: true, RestrictPublicBuckets: true}
+      VersioningConfiguration: {Status: Enabled}
+      BucketEncryption: {ServerSideEncryptionConfiguration: [{ServerSideEncryptionByDefault: {SSEAlgorithm: AES256}}]}
+  Repository:
+    Type: AWS::ECR::Repository
+    Properties:
+      ImageTagMutability: IMMUTABLE
+      ImageScanningConfiguration: {ScanOnPush: true}
+      LifecyclePolicy:
+        LifecyclePolicyText: '{"rules":[{"rulePriority":1,"description":"Retain ten releases","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":10},"action":{"type":"expire"}}]}'
+  Alerts:
+    Type: AWS::SNS::Topic
+    Properties: {Subscription: [{Protocol: email, Endpoint: !Ref AlertEmail}]}
+  AlertsPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics: [!Ref Alerts]
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: [events.amazonaws.com, cloudwatch.amazonaws.com]}
+            Action: sns:Publish
+            Resource: !Ref Alerts
+            Condition: {StringEquals: {'aws:SourceAccount': !Ref 'AWS::AccountId'}}
+  Budget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget: {BudgetName: !Sub '${AWS::StackName}-monthly', BudgetLimit: {Amount: 40, Unit: USD}, TimeUnit: MONTHLY, BudgetType: COST}
+      NotificationsWithSubscribers:
+        - Notification: {NotificationType: ACTUAL, ComparisonOperator: GREATER_THAN, Threshold: 20, ThresholdType: ABSOLUTE_VALUE}
+          Subscribers: [{SubscriptionType: EMAIL, Address: !Ref AlertEmail}]
+        - Notification: {NotificationType: ACTUAL, ComparisonOperator: GREATER_THAN, Threshold: 30, ThresholdType: ABSOLUTE_VALUE}
+          Subscribers: [{SubscriptionType: EMAIL, Address: !Ref AlertEmail}]
+        - Notification: {NotificationType: ACTUAL, ComparisonOperator: GREATER_THAN, Threshold: 40, ThresholdType: ABSOLUTE_VALUE}
+          Subscribers: [{SubscriptionType: EMAIL, Address: !Ref AlertEmail}]
+Outputs:
+  VpcId: {Value: !Ref Vpc}
+  PublicSubnet: {Value: !Ref PublicSubnet}
+  PrivateSubnets: {Value: !Join [',', [!Ref PrivateA, !Ref PrivateB]]}
+  ApiSecurityGroup: {Value: !Ref ApiSecurityGroup}
+  JobSecurityGroup: {Value: !Ref JobSecurityGroup}
+  DatabaseHost: {Value: !GetAtt Database.Endpoint.Address}
+  AdminSecretArn: {Value: !Ref AdminSecret}
+  ApiSecretArn: {Value: !Ref ApiSecret}
+  IngestSecretArn: {Value: !Ref IngestSecret}
+  TrestleSecretArn: {Value: !Ref TrestleSecret}
+  ArchiveBucket: {Value: !Ref ArchiveBucket}
+  WebBucket: {Value: !Ref WebBucket}
+  RepositoryUri: {Value: !GetAtt Repository.RepositoryUri}
+  AlertsTopicArn: {Value: !Ref Alerts}
