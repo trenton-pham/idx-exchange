@@ -179,8 +179,8 @@ Link: https://public.tableau.com/views/CaliforniaRealEstateCompetitiveAnalysis_1
 
 ### Santa Clara County Market Report
 
-![Santa Clara Market Report PNG](images/SantaClaraMarketReport.png)
+![Santa Clara Market Report PNG](images/SantaClaraCountyMarketReport.png)
 
 PDF version:
 
-![Santa Clara Market Report PDF](SantaClaraMarketReport.pdf)
+![Santa Clara Market Report PDF](SantaClaraCountyMarketReport.pdf)
