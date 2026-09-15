@@ -167,12 +167,20 @@ The tests cover extraction retries and token refresh, safe pagination, schema an
 
 ### Tableau Visualizations
 
-- Market Analysis: https://public.tableau.com/views/CaliforniaRealEstateMarketAnalysis_17882190871160/MarketAnalysis?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link
-- Competitive Analysis: https://public.tableau.com/views/CaliforniaRealEstateCompetitiveAnalysis_17882211560250/CompetitiveAnalysisDashboard?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link
+#### Market Analysis
+![Market Analysis Dashboard](images/MarketDashboard.png)
+
+Link: https://public.tableau.com/views/CaliforniaRealEstateMarketAnalysis_17882190871160/MarketAnalysis?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link
+
+#### Competitive Analysis
+![Competitive Analysis Dashboard](images/CompetitiveDashboard.png)
+
+Link: https://public.tableau.com/views/CaliforniaRealEstateCompetitiveAnalysis_17882211560250/CompetitiveAnalysisDashboard?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link
 
 ### Santa Clara County Market Report
 
 ![Santa Clara Market Report PNG](images/SantaClaraMarketReport.png)
 
-#### PDF version:
+PDF version:
+
 ![Santa Clara Market Report PDF](SantaClaraMarketReport.pdf)
